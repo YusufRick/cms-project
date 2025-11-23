@@ -55,31 +55,36 @@ const Signup = () => {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-4 py-8">
-      <Card className="          
-            w-full max-w-md
+    <div className="flex min-h-screen items-center justify-center bg-[#f5f7fb] px-4">
+      <Card
+        className="
+          w-full max-w-md
           rounded-[28px]
           border border-slate-100
           bg-white
           shadow-[0_24px_80px_rgba(15,23,42,0.12)]
           transition-transform duration-300
-          hover:scale-[1.02] hover:shadow-[0_28px_90px_rgba(15,23,42,0.14)]">
-
-        <CardHeader className="text-center">
+          hover:scale-[1.02] hover:shadow-[0_28px_90px_rgba(15,23,42,0.14)]
+        "
+      >
+        <CardHeader className="text-center pb-2">
           <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-[#e5ecff]">
-            <UserPlus className="h-8 w-8 text-primary" />
+            <UserPlus className="h-8 w-8 text-[#2563eb]" />
           </div>
-          <CardTitle className="text-2xl">Create Account</CardTitle>
-          <CardDescription>
+          <CardTitle className="text-2xl font-semibold text-slate-900">
+            Create Account
+          </CardTitle>
+          <CardDescription className="mt-1 text-[15px] text-slate-500">
             Sign up to get started with Complaint Manager
           </CardDescription>
         </CardHeader>
 
         <form onSubmit={handleSubmit}>
-          <CardContent className="space-y-4">
-
-            <div className="space-y-2">
-              <Label htmlFor="name">Full Name</Label>
+          <CardContent className="mt-4 space-y-4">
+            <div className="space-y-1.5 text-left">
+              <Label htmlFor="name" className="text-sm font-medium text-slate-700">
+                Full Name
+              </Label>
               <Input
                 id="name"
                 type="text"
@@ -87,12 +92,18 @@ const Signup = () => {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 required
-                className="transition-all duration-300 focus:scale-[1.02]"
+                className="
+                  h-11 rounded-xl border border-slate-200
+                  bg-slate-50 text-sm placeholder:text-slate-400
+                  focus:bg-white transition-all duration-300 focus:scale-[1.02]
+                "
               />
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+            <div className="space-y-1.5 text-left">
+              <Label htmlFor="email" className="text-sm font-medium text-slate-700">
+                Email
+              </Label>
               <Input
                 id="email"
                 type="email"
@@ -100,12 +111,18 @@ const Signup = () => {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className="transition-all duration-300 focus:scale-[1.02]"
+                className="
+                  h-11 rounded-xl border border-slate-200
+                  bg-slate-50 text-sm placeholder:text-slate-400
+                  focus:bg-white transition-all duration-300 focus:scale-[1.02]
+                "
               />
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
+            <div className="space-y-1.5 text-left">
+              <Label htmlFor="password" className="text-sm font-medium text-slate-700">
+                Password
+              </Label>
               <Input
                 id="password"
                 type="password"
@@ -113,12 +130,18 @@ const Signup = () => {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                className="transition-all duration-300 focus:scale-[1.02]"
+                className="
+                  h-11 rounded-xl border border-slate-200
+                  bg-slate-50 text-sm placeholder:text-slate-400
+                  focus:bg-white transition-all duration-300 focus:scale-[1.02]
+                "
               />
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="repassword">Confirm Password</Label>
+            <div className="space-y-1.5 text-left">
+              <Label htmlFor="repassword" className="text-sm font-medium text-slate-700">
+                Confirm Password
+              </Label>
               <Input
                 id="repassword"
                 type="password"
@@ -126,17 +149,30 @@ const Signup = () => {
                 value={repassword}
                 onChange={(e) => setRepassword(e.target.value)}
                 required
-                className="transition-all duration-300 focus:scale-[1.02]"
+                className="
+                  h-11 rounded-xl border border-slate-200
+                  bg-slate-50 text-sm placeholder:text-slate-400
+                  focus:bg-white transition-all duration-300 focus:scale-[1.02]
+                "
               />
             </div>
 
-            <div className="space-y-2">
-              <Label>Organization</Label>
+            <div className="space-y-1.5 text-left">
+              <Label className="text-sm font-medium text-slate-700">
+                Organization
+              </Label>
               <Select
                 value={organization}
                 onValueChange={setOrganization}
               >
-                <SelectTrigger className="transition-all duration-300 focus:scale-[1.02]">
+                <SelectTrigger
+                  className="
+                    h-11 rounded-xl border border-slate-200
+                    bg-slate-50 text-sm text-slate-900
+                    placeholder:text-slate-400
+                    focus:bg-white transition-all duration-300 focus:scale-[1.02]
+                  "
+                >
                   <SelectValue placeholder="Select your organization" />
                 </SelectTrigger>
 
@@ -147,21 +183,27 @@ const Signup = () => {
                 </SelectContent>
               </Select>
             </div>
-
           </CardContent>
 
-          <CardFooter className="flex flex-col gap-4">
+          <CardFooter className="flex flex-col gap-4 pt-6">
             <Button
               type="submit"
               disabled={loading}
-              className="w-full hover-lift"
+              className="
+                h-11 w-full rounded-xl
+                bg-[#2563eb]
+                text-sm font-medium text-white
+                hover:bg-[#1d4ed8]
+                transition-colors
+                hover-lift
+              "
             >
               {loading ? "Creating Account..." : "Create Account"}
             </Button>
 
-            <p className="text-center text-sm text-muted-foreground">
+            <p className="text-center text-sm text-slate-500">
               Already have an account?{" "}
-              <Link to="/login" className="text-primary hover:underline">
+              <Link to="/login" className="font-medium text-[#2563eb] hover:underline">
                 Sign in
               </Link>
             </p>
