@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { useAuth } from "../context/authContext"
+import { useAuth } from "../context/authContext";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
@@ -39,22 +39,38 @@ const LoginPage = () => {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-4">
-      <Card className="w-full max-w-md card-hover">
-        <CardHeader className="text-center">
-          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
-            <Shield className="h-8 w-8 text-primary" />
+    <div className="flex min-h-screen items-center justify-center bg-[#f5f7fb] px-4">
+      <Card
+        className="
+          w-full max-w-md
+          rounded-[28px]
+          border border-slate-100
+          bg-white
+          shadow-[0_24px_80px_rgba(15,23,42,0.12)]
+          transition-transform duration-300
+          hover:scale-[1.02] hover:shadow-[0_28px_90px_rgba(15,23,42,0.14)]
+        "
+      >
+        <CardHeader className="text-center pb-2">
+          <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-[#e5ecff]">
+            <Shield className="h-8 w-8 text-[#2563eb]" />
           </div>
-          <CardTitle className="text-2xl">Welcome Back</CardTitle>
-          <CardDescription>
+
+          <CardTitle className="text-2xl font-semibold text-slate-900">
+            Welcome Back
+          </CardTitle>
+
+          <CardDescription className="mt-1 text-[15px] text-slate-500">
             Sign in to your account to continue
           </CardDescription>
         </CardHeader>
 
         <form onSubmit={handleSubmit}>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+          <CardContent className="mt-4 space-y-4">
+            <div className="space-y-1.5 text-left">
+              <Label htmlFor="email" className="text-sm font-medium text-slate-700">
+                Email
+              </Label>
               <Input
                 id="email"
                 type="email"
@@ -62,12 +78,18 @@ const LoginPage = () => {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className="transition-all duration-300 focus:scale-[1.02]"
+                className="
+                  h-11 rounded-xl border border-slate-200
+                  bg-slate-50 text-sm placeholder:text-slate-400
+                  focus:bg-white
+                "
               />
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
+            <div className="space-y-1.5 text-left">
+              <Label htmlFor="password" className="text-sm font-medium text-slate-700">
+                Password
+              </Label>
               <Input
                 id="password"
                 type="password"
@@ -75,23 +97,33 @@ const LoginPage = () => {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                className="transition-all duration-300 focus:scale-[1.02]"
+                className="
+                  h-11 rounded-xl border border-slate-200
+                  bg-slate-50 text-sm placeholder:text-slate-400
+                  focus:bg-white
+                "
               />
             </div>
           </CardContent>
 
-          <CardFooter className="flex flex-col gap-4">
+          <CardFooter className="flex flex-col gap-4 pt-6">
             <Button
               type="submit"
-              className="w-full hover-lift"
               disabled={loading}
+              className="
+                h-11 w-full rounded-xl
+                bg-[#2563eb]
+                text-sm font-medium text-white
+                hover:bg-[#1d4ed8]
+                transition-colors
+              "
             >
               {loading ? "Signing in..." : "Sign In"}
             </Button>
 
-            <p className="text-center text-sm text-muted-foreground">
+            <p className="text-center text-sm text-slate-500">
               Don&apos;t have an account?{" "}
-              <Link to="/signup" className="text-primary hover:underline">
+              <Link to="/signup" className="font-medium text-[#2563eb] hover:underline">
                 Sign up
               </Link>
             </p>
