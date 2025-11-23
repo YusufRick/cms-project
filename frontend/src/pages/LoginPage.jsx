@@ -56,7 +56,7 @@ const LoginPage = () => {
             <Shield className="h-8 w-8 text-[#2563eb]" />
           </div>
 
-          <CardTitle className="text-2xl font-semibold text-slate-900">
+          <CardTitle className="text-2xl font-bold">
             Welcome Back
           </CardTitle>
 
