@@ -1,18 +1,13 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
-const userController = require('../controllers/userController');
-const { authenticate, authorize } = require('../middleware/auth');
 
-// GET /api/users
-router.get('/', authenticate, authorize('admin'), userController.getAllUsers);
+const authenticate = require("../middleware/auth");
 
-// GET /api/users/:id
-router.get('/:id', authenticate, userController.getUserById);
-
-// PUT /api/users/:id
-router.put('/:id', authenticate, authorize('admin'), userController.updateUser);
-
-// DELETE /api/users/:id
-router.delete('/:id', authenticate, authorize('admin'), userController.deleteUser);
+router.get("/me", authenticate, (req, res) => {
+  res.json({
+    message: "User authenticated",
+    user: req.user,
+  });
+});
 
 module.exports = router;

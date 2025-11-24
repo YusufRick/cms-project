@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../context/authContext";
+import { db,} from "../firebase";
+import {serverTimestamp,addDoc,collection} from "firebase/firestore";
 
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
@@ -23,6 +25,8 @@ import {
 
 import { toast } from "sonner";
 import { UserPlus } from "lucide-react";
+
+
 
 const Signup = () => {
   const [email, setEmail] = useState("");
@@ -47,8 +51,7 @@ const Signup = () => {
     try {
       await signup(email, password, name, organization);
       toast.success("Account created successfully!");
-      // you can change this to "/login" if you want them to log in manually
-      navigate("/dashboard");
+      navigate("/login");
     } catch (error) {
       console.error(error);
       toast.error(error.message || "Signup failed. Please try again.");
@@ -95,7 +98,7 @@ const Signup = () => {
               <Input
                 id="name"
                 type="text"
-                placeholder="John Doe"
+                placeholder="Your full name"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 required
@@ -198,19 +201,19 @@ const Signup = () => {
 
                 <SelectContent>
                   <SelectItem
-                    value="bank"
+                    value="Bank"
                     className="text-slate-800 hover:bg-slate-100 rounded-md"
                   >
                     Bank
                   </SelectItem>
                   <SelectItem
-                    value="airline"
+                    value="Airline"
                     className="text-slate-800 hover:bg-slate-100 rounded-md"
                   >
                     Airline
                   </SelectItem>
                   <SelectItem
-                    value="telecom"
+                    value="Telecom"
                     className="text-slate-800 hover:bg-slate-100 rounded-md"
                   >
                     Telecom

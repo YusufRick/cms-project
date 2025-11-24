@@ -9,7 +9,7 @@ import {
 } from "firebase/auth";
 
 import { auth, db } from "../firebase";
-import { doc, setDoc, serverTimestamp } from "firebase/firestore";
+import {serverTimestamp,setDoc,collection, addDoc} from "firebase/firestore";
 
 const AuthContext = createContext(undefined);
 
@@ -53,25 +53,50 @@ export const AuthProvider = ({ children }) => {
     // onAuthStateChanged will update `user`
   };
 
-  // SIGNUP
-  const signup = async (email, password, name, organization) => {
-    // 1. create auth user
+  //create user
+  // SIGNUP with Firebase (with error handling)
+const signup = async (email, password, name, organization) => {
+  try {
+    // 1. Create user in Firebase Authentication
     const cred = await createUserWithEmailAndPassword(auth, email, password);
 
-    // 2. set displayName
-    if (name) {
-      await updateProfile(cred.user, { displayName: name });
-    }
+    
 
-    // 3. store meta in Firestore
-    await setDoc(doc(db, "User", cred.user.uid), {
+    // 3. Create user document in Firestore
+    await addDoc(collection(db, "User"), {
       Name: name,
-      email,
+      email : email,
       Company: organization,
-      Role: "pending", // admin will approve + set final role
+      Role: "pending",
       createdAt: serverTimestamp(),
     });
-  };
+
+    // 4. Update Firebase Auth profile
+
+
+    return cred.user; 
+  } 
+  
+  catch (err) {
+    console.error("Signup Error:", err);
+
+    
+    let message = "Signup failed. Please try again.";
+
+    if (err.code === "auth/email-already-in-use") {
+      message = "This email is already registered.";
+    } 
+    else if (err.code === "auth/invalid-email") {
+      message = "Invalid email format.";
+    }
+    else if (err.code === "auth/weak-password") {
+      message = "Password must be stronger.";
+    }
+
+    throw new Error(message); 
+  }
+};
+
 
   // LOGOUT
   const logout = async () => {

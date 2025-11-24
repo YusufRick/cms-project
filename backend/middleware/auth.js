@@ -1,34 +1,36 @@
-const jwt = require('jsonwebtoken');
+const admin = require("../firebaseAdmin");
 
-// Verify JWT token
-exports.authenticate = (req, res, next) => {
-  try {
-    const token = req.headers.authorization?.split(' ')[1];
-    
-    if (!token) {
-      return res.status(401).json({ error: 'No token provided' });
-    }
+module.exports = async function authenticate(req, res, next) {
+  const header = req.headers.authorization;
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    req.user = decoded;
-    next();
-  } catch (error) {
-    console.error('Auth error:', error);
-    res.status(401).json({ error: 'Invalid token' });
+  if (!header || !header.startsWith("Bearer ")) {
+    return res.status(401).json({ message: "Missing or invalid token" });
   }
-};
 
-// Check user role
-exports.authorize = (...allowedRoles) => {
-  return (req, res, next) => {
-    if (!req.user) {
-      return res.status(401).json({ error: 'Unauthorized' });
+  const token = header.split(" ")[1];
+
+  try {
+    // Verify Firebase token
+    const decoded = await admin.auth().verifyIdToken(token);
+
+    // Get user role from Firestore
+    const db = admin.firestore();
+    const snap = await db.collection("User").doc(decoded.uid).get();
+
+    let role = "pending";
+    if (snap.exists) {
+      role = snap.data().Role || "pending";
     }
 
-    if (!allowedRoles.includes(req.user.role)) {
-      return res.status(403).json({ error: 'Forbidden: Insufficient permissions' });
-    }
+    req.user = {
+      uid: decoded.uid,
+      email: decoded.email,
+      role,
+    };
 
     next();
-  };
+  } catch (err) {
+    console.error("Auth error:", err);
+    res.status(401).json({ message: "Unauthorized" });
+  }
 };
