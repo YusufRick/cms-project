@@ -1,8 +1,9 @@
-// src/firebase.js
+// IMPORTS
 import { initializeApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
+import { getFirestore } from "firebase/firestore";
 
-// API keys and config object
+// CONFIG
 const firebaseConfig = {
   apiKey: "AIzaSyCIIB1JFyTdo_XzBV0WFEFJacuybXza5cc",
   authDomain: "complaint-management-ad4cf.firebaseapp.com",
@@ -13,8 +14,9 @@ const firebaseConfig = {
   measurementId: "G-PMWVYVZ3K0"
 };
 
-// Initialize Firebase
+// INIT
 const app = initializeApp(firebaseConfig);
 
-// Export Firebase Auth to your app
+// EXPORTS
 export const auth = getAuth(app);
+export const db = getFirestore(app);

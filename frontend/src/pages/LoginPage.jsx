@@ -56,8 +56,8 @@ const LoginPage = () => {
             <Shield className="h-8 w-8 text-[#2563eb]" />
           </div>
 
-          <CardTitle className="text-2xl font-bold">
-            Welcome Back
+          <CardTitle className="mt-1 text-[15px] text-slate-500">
+            Complaint Management System
           </CardTitle>
 
           <CardDescription className="mt-1 text-[15px] text-slate-500">

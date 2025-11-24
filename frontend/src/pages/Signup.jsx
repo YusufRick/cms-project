@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../context/authContext";
+
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
@@ -19,6 +20,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "../components/ui/select";
+
 import { toast } from "sonner";
 import { UserPlus } from "lucide-react";
 
@@ -28,8 +30,8 @@ const Signup = () => {
   const [repassword, setRepassword] = useState("");
   const [name, setName] = useState("");
   const [organization, setOrganization] = useState("bank");
-
   const [loading, setLoading] = useState(false);
+
   const { signup } = useAuth();
   const navigate = useNavigate();
 
@@ -42,12 +44,13 @@ const Signup = () => {
     }
 
     setLoading(true);
-
     try {
       await signup(email, password, name, organization);
       toast.success("Account created successfully!");
-      navigate("/dashboard"); // or /login if you prefer
+      // you can change this to "/login" if you want them to log in manually
+      navigate("/dashboard");
     } catch (error) {
+      console.error(error);
       toast.error(error.message || "Signup failed. Please try again.");
     } finally {
       setLoading(false);
@@ -81,8 +84,12 @@ const Signup = () => {
 
         <form onSubmit={handleSubmit}>
           <CardContent className="mt-4 space-y-4">
+            {/* Full Name */}
             <div className="space-y-1.5 text-left">
-              <Label htmlFor="name" className="text-sm font-medium text-slate-700">
+              <Label
+                htmlFor="name"
+                className="text-sm font-medium text-slate-700"
+              >
                 Full Name
               </Label>
               <Input
@@ -100,8 +107,12 @@ const Signup = () => {
               />
             </div>
 
+            {/* Email */}
             <div className="space-y-1.5 text-left">
-              <Label htmlFor="email" className="text-sm font-medium text-slate-700">
+              <Label
+                htmlFor="email"
+                className="text-sm font-medium text-slate-700"
+              >
                 Email
               </Label>
               <Input
@@ -119,8 +130,12 @@ const Signup = () => {
               />
             </div>
 
+            {/* Password */}
             <div className="space-y-1.5 text-left">
-              <Label htmlFor="password" className="text-sm font-medium text-slate-700">
+              <Label
+                htmlFor="password"
+                className="text-sm font-medium text-slate-700"
+              >
                 Password
               </Label>
               <Input
@@ -138,8 +153,12 @@ const Signup = () => {
               />
             </div>
 
+            {/* Confirm password */}
             <div className="space-y-1.5 text-left">
-              <Label htmlFor="repassword" className="text-sm font-medium text-slate-700">
+              <Label
+                htmlFor="repassword"
+                className="text-sm font-medium text-slate-700"
+              >
                 Confirm Password
               </Label>
               <Input
@@ -157,6 +176,7 @@ const Signup = () => {
               />
             </div>
 
+            {/* Organization */}
             <div className="space-y-1.5 text-left">
               <Label className="text-sm font-medium text-slate-700">
                 Organization
@@ -177,9 +197,24 @@ const Signup = () => {
                 </SelectTrigger>
 
                 <SelectContent>
-                  <SelectItem value="bank">Bank</SelectItem>
-                  <SelectItem value="airline">Airline</SelectItem>
-                  <SelectItem value="telecom">Telecom</SelectItem>
+                  <SelectItem
+                    value="bank"
+                    className="text-slate-800 hover:bg-slate-100 rounded-md"
+                  >
+                    Bank
+                  </SelectItem>
+                  <SelectItem
+                    value="airline"
+                    className="text-slate-800 hover:bg-slate-100 rounded-md"
+                  >
+                    Airline
+                  </SelectItem>
+                  <SelectItem
+                    value="telecom"
+                    className="text-slate-800 hover:bg-slate-100 rounded-md"
+                  >
+                    Telecom
+                  </SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -203,7 +238,10 @@ const Signup = () => {
 
             <p className="text-center text-sm text-slate-500">
               Already have an account?{" "}
-              <Link to="/login" className="font-medium text-[#2563eb] hover:underline">
+              <Link
+                to="/login"
+                className="font-medium text-[#2563eb] hover:underline"
+              >
                 Sign in
               </Link>
             </p>
