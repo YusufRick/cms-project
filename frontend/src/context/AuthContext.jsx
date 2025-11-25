@@ -71,8 +71,10 @@ export const AuthProvider = ({ children }) => {
     // get role from Firestore
     const userDoc = await getDoc(doc(db, "User", cred.user.uid));
     const data = userDoc.data() || {};
+    const getemail = userDoc.data()?.email || "";
     const role = data.Role || "pending";
     console.log("🔥 Fetched Role from Firestore:", role);
+    console.log("🔥 Fetched Role from Firestore:", getemail);
 
     setUser((prev) => ({
       uid: cred.user.uid,
