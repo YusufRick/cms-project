@@ -80,58 +80,77 @@ const ConsumerDashboard = () => {
 
   const getStatusBadge = (status) => {
     const variants = {
-      pending: { color: 'bg-warning', icon: Clock },
-      'in-progress': { color: 'bg-info', icon: FileText },
-      resolved: { color: 'bg-success', icon: CheckCircle },
+      pending: {
+        classes: 'bg-amber-100 text-amber-900 border border-amber-200',
+        icon: Clock,
+        label: 'pending',
+      },
+      'in-progress': {
+        classes: 'bg-sky-100 text-sky-900 border border-sky-200',
+        icon: FileText,
+        label: 'in-progress',
+      },
+      resolved: {
+        classes: 'bg-emerald-100 text-emerald-900 border border-emerald-200',
+        icon: CheckCircle,
+        label: 'resolved',
+      },
     };
-    const { color, icon: Icon } = variants[status];
+
+    const variant = variants[status] || variants.pending;
+    const Icon = variant.icon;
+
     return (
-      <Badge className={color}>
-        <Icon className="mr-1 h-3 w-3" />
-        {status}
+      <Badge className={`flex items-center gap-1 px-3 py-1 text-xs font-medium rounded-full ${variant.classes}`}>
+        <Icon className="h-3 w-3" />
+        {variant.label}
       </Badge>
     );
   };
 
   return (
     <DashboardLayout title="Consumer Dashboard">
-      <div className="space-y-6">
+      {/* page background + spacing */}
+      <div className="bg-gray-50 min-h-screen p-6 md:p-8 space-y-6">
         {/* Stats Cards */}
         <div className="grid gap-4 md:grid-cols-4">
-          <Card className="card-hover">
+          <Card className="bg-white border border-gray-200 rounded-xl shadow-sm">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Total Complaints</CardTitle>
-              <FileText className="h-4 w-4 text-muted-foreground" />
+              <FileText className="h-4 w-4 text-gray-400" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{totalComplaints}</div>
+              <div className="text-2xl font-bold text-gray-900">{totalComplaints}</div>
             </CardContent>
           </Card>
-          <Card className="card-hover">
+
+          <Card className="bg-white border border-gray-200 rounded-xl shadow-sm">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Resolved</CardTitle>
-              <CheckCircle className="h-4 w-4 text-success" />
+              <CheckCircle className="h-4 w-4 text-emerald-500" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-success">{resolvedComplaints}</div>
+              <div className="text-2xl font-bold text-emerald-600">{resolvedComplaints}</div>
             </CardContent>
           </Card>
-          <Card className="card-hover">
+
+          <Card className="bg-white border border-gray-200 rounded-xl shadow-sm">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Pending</CardTitle>
-              <Clock className="h-4 w-4 text-warning" />
+              <Clock className="h-4 w-4 text-amber-500" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-warning">{pendingComplaints}</div>
+              <div className="text-2xl font-bold text-amber-600">{pendingComplaints}</div>
             </CardContent>
           </Card>
-          <Card className="card-hover">
+
+          <Card className="bg-white border border-gray-200 rounded-xl shadow-sm">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">In Progress</CardTitle>
-              <FileText className="h-4 w-4 text-info" />
+              <FileText className="h-4 w-4 text-sky-500" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-info">{inProgressComplaints}</div>
+              <div className="text-2xl font-bold text-sky-600">{inProgressComplaints}</div>
             </CardContent>
           </Card>
         </div>
@@ -140,7 +159,7 @@ const ConsumerDashboard = () => {
         <div className="flex justify-end">
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
-              <Button className="hover-lift">
+              <Button className="hover-lift bg-blue-600 hover:bg-blue-700 text-white rounded-full px-5">
                 <Upload className="mr-2 h-4 w-4" />
                 Log New Complaint
               </Button>
@@ -159,14 +178,16 @@ const ConsumerDashboard = () => {
                         key={category.id}
                         type="button"
                         onClick={() => setSelectedCategory(category.id)}
-                        className={`p-4 border-2 rounded-lg transition-all hover-lift ${
+                        className={`p-4 border-2 rounded-xl transition-all hover-lift bg-white ${
                           selectedCategory === category.id
-                            ? 'border-primary bg-primary/10'
-                            : 'border-border hover:border-primary/50'
+                            ? 'border-blue-500 bg-blue-50'
+                            : 'border-gray-200 hover:border-blue-300'
                         }`}
                       >
                         <div className="text-3xl mb-2">{category.icon}</div>
-                        <div className="text-sm font-medium">{category.name}</div>
+                        <div className="text-sm font-medium text-gray-900">
+                          {category.name}
+                        </div>
                       </button>
                     ))}
                   </div>
@@ -197,7 +218,7 @@ const ConsumerDashboard = () => {
                   <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
                     Cancel
                   </Button>
-                  <Button type="submit" className="hover-lift">
+                  <Button type="submit" className="hover-lift bg-blue-600 hover:bg-blue-700 text-white">
                     <Upload className="mr-2 h-4 w-4" />
                     Submit Complaint
                   </Button>
@@ -208,29 +229,35 @@ const ConsumerDashboard = () => {
         </div>
 
         {/* Complaint History */}
-        <Card className="card-hover">
+        <Card className="bg-white border border-gray-200 rounded-2xl shadow-sm">
           <CardHeader>
-            <CardTitle>Complaint History</CardTitle>
-            <CardDescription>View all your submitted complaints</CardDescription>
+            <CardTitle className="text-lg font-semibold text-gray-900">
+              Complaint History
+            </CardTitle>
+            <CardDescription className="text-gray-500">
+              View all your submitted complaints
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
               {complaints.map((complaint) => (
                 <div
                   key={complaint.id}
-                  className="p-4 border rounded-lg hover:border-primary/50 transition-colors"
+                  className="p-4 bg-white border border-gray-200 rounded-2xl hover:border-blue-400 transition-all"
                 >
                   <div className="flex items-start justify-between mb-2">
                     <div>
-                      <div className="font-semibold text-lg">{complaint.id}</div>
-                      <div className="text-sm text-muted-foreground">
+                      <div className="font-semibold text-lg text-gray-900">
+                        {complaint.id}
+                      </div>
+                      <div className="text-sm text-gray-500">
                         {categories.find(c => c.id === complaint.category)?.name}
                       </div>
                     </div>
                     {getStatusBadge(complaint.status)}
                   </div>
-                  <p className="text-sm mb-2">{complaint.description}</p>
-                  <div className="flex items-center justify-between text-xs text-muted-foreground">
+                  <p className="text-sm text-gray-800 mb-2">{complaint.description}</p>
+                  <div className="flex items-center justify-between text-xs text-gray-500">
                     <span>Submitted: {complaint.createdAt.toLocaleDateString()}</span>
                     {complaint.resolvedAt && (
                       <span>Resolved: {complaint.resolvedAt.toLocaleDateString()}</span>

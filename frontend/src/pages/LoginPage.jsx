@@ -20,23 +20,38 @@ const LoginPage = () => {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const { login } = useAuth();
+  const { login, logout } = useAuth();
   const navigate = useNavigate();
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
+ const handleSubmit = async (e) => {
+  e.preventDefault();
+  setLoading(true);
 
-    try {
-      await login(email, password);
-      toast.success("Login successful!");
+  try {
+    const role = await login(email, password);   
+
+    toast.success("Login successful!");
+
+    if (role === "admin") {
+      navigate("/admin");
+    } 
+    else if (role === "pending") {
+        toast.info("Your account is pending approval. Please contact your administrator.");
+        await logout();
+        return; // prevent accidental navigation
+}
+    
+    else {
       navigate("/dashboard");
-    } catch (error) {
-      toast.error("Login failed. Please check your credentials.");
-    } finally {
-      setLoading(false);
     }
-  };
+  }
+   catch (error) {
+    console.error(error);
+    toast.error("Login failed. Please check your credentials.");
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-[#f5f7fb] px-4">

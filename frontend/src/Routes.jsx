@@ -9,44 +9,67 @@ import AdminDashboard from "./pages/AdminDashboard";
 export default function AppRoutes() {
   const { user } = useAuth();
 
-
-  //RBAC
   const getDashboard = () => {
     if (!user) return "/login";
-    if (user.role === "admin") return "/admin";
-    return "/dashboard"; // consumer
+
+    switch (user.role) {
+      case "admin":
+        return "/admin";
+
+      case "consumer":
+        return "/dashboard";
+      case "pending":
+      default:
+        return "/login";
+    }
   };
 
   return (
-
-
     <Routes>
       {/* PUBLIC ROUTES */}
       <Route
-  path="/login"
-  element={!user ? <LoginPage /> : <Navigate to="/dashboard" replace />}
-/>
+        path="/login"
+        element={
+          !user || user.role === "pending"
+            ? <LoginPage />
+            : <Navigate to={getDashboard()} replace />
+        }
+      />
 
-<Route
-  path="/register"
-  element={!user ? <SignupPage /> : <Navigate to="/dashboard" replace />}
-/>
+      <Route
+        path="/register"
+        element={
+          !user || user.role === "pending"
+            ? <SignupPage />
+            : <Navigate to={getDashboard()} replace />
+        }
+      />
 
-<Route
-  path="/dashboard"
-  element={user ? <ConsumerDashboardPage /> : <Navigate to="/login" replace />}
-/>
+      {/* CONSUMER DASHBOARD (consumer only) */}
+      <Route
+        path="/dashboard"
+        element={
+          user?.role === "consumer"
+            ? <ConsumerDashboardPage />
+            : <Navigate to={getDashboard()} replace />
+        }
+      />
 
-<Route
-  path="*"
-  element={<Navigate to={user ? "/dashboard" : "/login"} replace />}
-/>
+      {/* ADMIN DASHBOARD (admin only) */}
+      <Route
+        path="/admin"
+        element={
+          user?.role === "admin"
+            ? <AdminDashboard />
+            : <Navigate to={getDashboard()} replace />
+        }
+      />
 
-<Route
-  path="/admin"
-  element={!user ? <AdminDashboard/> : <Navigate to="/login" replace />}
-/>
-
+      {/* CATCH-ALL */}
+      <Route
+        path="*"
+        element={<Navigate to={getDashboard()} replace />}
+      />
     </Routes>
   );
 }

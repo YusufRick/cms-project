@@ -5,11 +5,15 @@ import {
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   signOut,
-  updateProfile,
 } from "firebase/auth";
 
 import { auth, db } from "../firebase";
-import {serverTimestamp,setDoc,collection, addDoc} from "firebase/firestore";
+import {
+  serverTimestamp,
+  setDoc,
+  getDoc,
+  doc,
+} from "firebase/firestore";
 
 const AuthContext = createContext(undefined);
 
@@ -25,82 +29,102 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null); // { uid, email, name, role, organization }
   const [loading, setLoading] = useState(true);
 
-  // Keep user in sync with Firebase Auth
+ 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
       if (firebaseUser) {
-        setUser({
-          uid: firebaseUser.uid,
-          email: firebaseUser.email,
-          name:
-            firebaseUser.displayName ||
-            firebaseUser.email?.split("@")[0] ||
-            "User",
-          role: "pending", // admin will set actual role later
-        });
+        (async () => {
+          try {
+            const userDocRef = doc(db, "User", firebaseUser.uid);
+            const userDoc = await getDoc(userDocRef);
+            const data = userDoc.data() || {};
+            const role = (data.Role || "pending").toLowerCase();
+
+            setUser({
+              uid: firebaseUser.uid,
+              email: firebaseUser.email,
+              name:
+                firebaseUser.displayName ||
+                firebaseUser.email?.split("@")[0] ||
+                "User",
+              role,
+              
+              
+            });
+          } catch (error) {
+            setUser(null);
+          }
+          setLoading(false);
+        })();
       } else {
         setUser(null);
+        setLoading(false);
       }
-      setLoading(false);
     });
-
     return () => unsubscribe();
   }, []);
 
-  // LOGIN
+  // LOGIN + RBAC
   const login = async (email, password) => {
-    await signInWithEmailAndPassword(auth, email, password);
-    // onAuthStateChanged will update `user`
+    const cred = await signInWithEmailAndPassword(auth, email, password);
+
+    // get role from Firestore
+    const userDoc = await getDoc(doc(db, "User", cred.user.uid));
+    const data = userDoc.data() || {};
+    const role = data.Role || "pending";
+    console.log("🔥 Fetched Role from Firestore:", role);
+
+    setUser((prev) => ({
+      uid: cred.user.uid,
+      email: cred.user.email,
+      name:
+        prev?.name ||
+        cred.user.displayName ||
+        cred.user.email?.split("@")[0] ||
+        "User",
+      role,
+      
+    }));
+
+    return role;
   };
 
-  //create user
-  // SIGNUP with Firebase (with error handling)
-const signup = async (email, password, name, organization) => {
-  try {
-    // 1. Create user in Firebase Authentication
-    const cred = await createUserWithEmailAndPassword(auth, email, password);
+  // SIGNUP
+  const signup = async (email, password, name, organization) => {
+    try {
+      const cred = await createUserWithEmailAndPassword(auth, email, password);
 
-    
+      // create user doc with ID == UID
+      await setDoc(doc(db, "User", cred.user.uid), {
+        Name: name,
+        email,
+        Company: organization,
+        Role: "pending",
+        createdAt: serverTimestamp(),
+      });
 
-    // 3. Create user document in Firestore
-    await addDoc(collection(db, "User"), {
-      Name: name,
-      email : email,
-      Company: organization,
-      Role: "pending",
-      createdAt: serverTimestamp(),
-    });
+      return cred.user;
+    } catch (err) {
+      console.error("Signup Error:", err);
 
-    // 4. Update Firebase Auth profile
+      let message = "Signup failed. Please try again.";
 
+      if (err.code === "auth/email-already-in-use") {
+        message = "This email is already registered.";
+      } else if (err.code === "auth/invalid-email") {
+        message = "Invalid email format.";
+      } else if (err.code === "auth/weak-password") {
+        message = "Password must be stronger.";
+      }
 
-    return cred.user; 
-  } 
-  
-  catch (err) {
-    console.error("Signup Error:", err);
-
-    
-    let message = "Signup failed. Please try again.";
-
-    if (err.code === "auth/email-already-in-use") {
-      message = "This email is already registered.";
-    } 
-    else if (err.code === "auth/invalid-email") {
-      message = "Invalid email format.";
+      throw new Error(message);
     }
-    else if (err.code === "auth/weak-password") {
-      message = "Password must be stronger.";
-    }
-
-    throw new Error(message); 
-  }
-};
-
+  };
 
   // LOGOUT
   const logout = async () => {
     await signOut(auth);
+    setUser(null);
   };
 
   return (
