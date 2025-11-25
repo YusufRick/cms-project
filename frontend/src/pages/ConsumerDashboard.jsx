@@ -116,7 +116,7 @@ const ConsumerDashboard = () => {
         <div className="grid gap-4 md:grid-cols-4">
           <Card className="bg-white border border-gray-200 rounded-xl shadow-sm">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Complaints</CardTitle>
+              <CardTitle className="text-sm font-medium text-gray-500">Total Complaints</CardTitle>
               <FileText className="h-4 w-4 text-gray-400" />
             </CardHeader>
             <CardContent>
@@ -126,7 +126,7 @@ const ConsumerDashboard = () => {
 
           <Card className="bg-white border border-gray-200 rounded-xl shadow-sm">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Resolved</CardTitle>
+              <CardTitle className="text-sm font-medium text-gray-500">Resolved</CardTitle>
               <CheckCircle className="h-4 w-4 text-emerald-500" />
             </CardHeader>
             <CardContent>
@@ -136,7 +136,7 @@ const ConsumerDashboard = () => {
 
           <Card className="bg-white border border-gray-200 rounded-xl shadow-sm">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Pending</CardTitle>
+              <CardTitle className="text-sm font-medium text-gray-500">Pending</CardTitle>
               <Clock className="h-4 w-4 text-amber-500" />
             </CardHeader>
             <CardContent>
@@ -146,7 +146,7 @@ const ConsumerDashboard = () => {
 
           <Card className="bg-white border border-gray-200 rounded-xl shadow-sm">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">In Progress</CardTitle>
+              <CardTitle className="text-sm font-medium text-gray-500">In Progress</CardTitle>
               <FileText className="h-4 w-4 text-sky-500" />
             </CardHeader>
             <CardContent>

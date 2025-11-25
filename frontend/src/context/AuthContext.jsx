@@ -73,8 +73,8 @@ export const AuthProvider = ({ children }) => {
     const data = userDoc.data() || {};
     const getemail = userDoc.data()?.email || "";
     const role = data.Role || "pending";
-    console.log("🔥 Fetched Role from Firestore:", role);
-    console.log("🔥 Fetched Role from Firestore:", getemail);
+    console.log("Fetched Role from Firestore:", role);
+    console.log("Fetched email from Firestore:", getemail);
 
     setUser((prev) => ({
       uid: cred.user.uid,
