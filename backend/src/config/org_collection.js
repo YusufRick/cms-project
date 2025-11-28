@@ -1,14 +1,15 @@
+//role based for each organisation
 export const ORG_COLLECTIONS = {
-  bank: {
-    category: "Bank_Category",
-    complaint: "Bank_Complaint",
+  Airline: {
+    categories: "Airline_Category",
+    complaints: "Airline_Complaint",
   },
-  telecom: {
-    category: "Telecom_Category",
-    complaint: "Telecom_Complaint",
+  Bank: {
+    categories: "Bank_Category",
+    complaints: "Bank_Complaint",
   },
-  airline: {
-    category: "Airline_Category",
-    complaint: "Airline_Complaint",
+  Telecom: {
+    categories: "Telecom_Category",
+    complaints: "Telecom_Complaint",
   },
 };

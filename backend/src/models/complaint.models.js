@@ -1,19 +1,40 @@
 // src/models/complaint.models.js
-import { db } from "../../firebaseAdmin.js"; // 🔧 adjust path if needed
+import { db } from "../../firebaseAdmin.js";
+import { ORG_COLLECTIONS } from "../config/org_collection.js";
 
-// Helper to get the collection for a given organization type
-const complaintCollection = (orgType) =>
-  db.collection(`${orgType}_complaints`); // e.g. "hospital_complaints", "bank_complaints"
+const complaintCollection = (orgType) => {
+  const orgConfig = ORG_COLLECTIONS[orgType];
+  if (!orgConfig || !orgConfig.complaints) {
+    throw new Error(`No complaints collection configured for orgType: ${orgType}`);
+  }
+  return db.collection(orgConfig.complaints);
+};
+
 
 export const getComplaints = async (orgType, userId) => {
   try {
-    let ref = complaintCollection(orgType).where("user_id", "==", userId);
+    // 1) Only filter in Firestore
+    const snapshot = await complaintCollection(orgType)
+      .where("user_id", "==", userId)
+      .get();
 
-    const snapshot = await ref.orderBy("createdAt", "desc").get();
+    // 2) Map to plain objects
     const complaints = snapshot.docs.map((doc) => ({
       id: doc.id,
       ...doc.data(),
     }));
+
+    // 3) Sort in memory by createdAt DESC
+    complaints.sort((a, b) => {
+      const ta = a.createdAt?.toMillis
+        ? a.createdAt.toMillis()
+        : new Date(a.createdAt || 0).getTime();
+      const tb = b.createdAt?.toMillis
+        ? b.createdAt.toMillis()
+        : new Date(b.createdAt || 0).getTime();
+
+      return tb - ta; // newest first
+    });
 
     return complaints;
   } catch (err) {
@@ -21,6 +42,7 @@ export const getComplaints = async (orgType, userId) => {
     throw err;
   }
 };
+
 
 export const getAllComplaints = async (orgType) => {
   try {
