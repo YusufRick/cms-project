@@ -18,6 +18,7 @@ import { useState } from 'react';
 import { toast } from 'sonner';
 import { UserPlus, Edit, Trash2 } from 'lucide-react';
 import { useAuth } from '../context/authContext';
+import {db,} from "../firebase";
 
 const mockUsers = [
   {
