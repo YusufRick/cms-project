@@ -8,12 +8,7 @@ import {
 } from "firebase/auth";
 
 import { auth, db } from "../firebase";
-import {
-  serverTimestamp,
-  setDoc,
-  getDoc,
-  doc,
-} from "firebase/firestore";
+import { serverTimestamp, setDoc, getDoc, doc } from "firebase/firestore";
 
 const AuthContext = createContext(undefined);
 
@@ -26,10 +21,9 @@ export const useAuth = () => {
 };
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null); // { uid, email, name, role, organization }
+  const [user, setUser] = useState(null); // { uid, email, name, role, company }
   const [loading, setLoading] = useState(true);
 
- 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
       if (firebaseUser) {
@@ -38,7 +32,9 @@ export const AuthProvider = ({ children }) => {
             const userDocRef = doc(db, "User", firebaseUser.uid);
             const userDoc = await getDoc(userDocRef);
             const data = userDoc.data() || {};
+
             const role = (data.Role || "pending").toLowerCase();
+            const company = data.Company || "";
 
             setUser({
               uid: firebaseUser.uid,
@@ -48,31 +44,43 @@ export const AuthProvider = ({ children }) => {
                 firebaseUser.email?.split("@")[0] ||
                 "User",
               role,
-              
-              
+              company,
             });
           } catch (error) {
+            console.error("Error loading user profile:", error);
             setUser(null);
+          } finally {
+            setLoading(false);
           }
-          setLoading(false);
         })();
       } else {
         setUser(null);
         setLoading(false);
       }
     });
+
     return () => unsubscribe();
   }, []);
+
+  // 🔑 helper: get current user's ID token for backend auth
+  const getIdToken = async () => {
+    const current = auth.currentUser;
+    if (!current) {
+      throw new Error("User not logged in");
+    }
+    return current.getIdToken(/* forceRefresh? false */);
+  };
 
   // LOGIN + RBAC
   const login = async (email, password) => {
     const cred = await signInWithEmailAndPassword(auth, email, password);
 
-    // get role from Firestore
     const userDoc = await getDoc(doc(db, "User", cred.user.uid));
     const data = userDoc.data() || {};
-    const getemail = userDoc.data()?.email || "";
     const role = data.Role || "pending";
+    const company = data.Company || "";
+    const getemail = data.email || "";
+
     console.log("Fetched Role from Firestore:", role);
     console.log("Fetched email from Firestore:", getemail);
 
@@ -84,8 +92,8 @@ export const AuthProvider = ({ children }) => {
         cred.user.displayName ||
         cred.user.email?.split("@")[0] ||
         "User",
-      role,
-      
+      role: role.toLowerCase(),
+      company,
     }));
 
     return role;
@@ -96,7 +104,6 @@ export const AuthProvider = ({ children }) => {
     try {
       const cred = await createUserWithEmailAndPassword(auth, email, password);
 
-      // create user doc with ID == UID
       await setDoc(doc(db, "User", cred.user.uid), {
         Name: name,
         email,
@@ -130,7 +137,16 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, signup, logout, loading }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        login,
+        signup,
+        logout,
+        getIdToken,   // 👈 expose token function
+        loading,
+      }}
+    >
       {!loading && children}
     </AuthContext.Provider>
   );

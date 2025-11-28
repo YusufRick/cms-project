@@ -1,9 +1,17 @@
-const admin = require("firebase-admin");
-const serviceAccount = require("./serviceAccountKey.json"); 
-// Download from Firebase Console → Project Settings → Service Accounts
+// backend/firebaseAdmin.js
+import admin from "firebase-admin";
+import { createRequire } from "module";
 
-admin.initializeApp({
-  credential: admin.credential.cert(serviceAccount),
-});
+const require = createRequire(import.meta.url);
+const serviceAccount = require("./serviceAccountKey.json");
 
-module.exports = admin;
+if (!admin.apps.length) {
+  admin.initializeApp({
+    credential: admin.credential.cert(serviceAccount),
+  });
+}
+
+export const db = admin.firestore();
+export const auth = admin.auth();
+
+export default admin;

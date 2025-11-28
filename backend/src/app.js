@@ -1,16 +1,27 @@
-// src/app.js
-const express = require('express');
-const cors = require('cors');
-require('dotenv').config();
+import express from "express";
+import cors from "cors";
 
-const complaintRoutes = require('./routes/complaint.routes');
+import categoryRoutes from "./routes/category.routes.js";
+import complaintRoutes from "./routes/complaint.routes.js";
+import { verifyToken } from "./middleware/authMiddleware.js";
 
 const app = express();
 
-app.use(cors());
+app.use(
+  cors({
+    origin: "http://localhost:5173",
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+  })
+);
+
 app.use(express.json());
 
-app.use('/api/complaints', complaintRoutes);
+app.get("/", (req, res) => {
+  res.json({ status: "ok" });
+});
 
-const port = process.env.PORT || 4000;
-app.listen(port, () => console.log(`API running on port ${port}`));
+app.use("/api/categories", verifyToken, categoryRoutes);
+app.use("/api/complaints", verifyToken, complaintRoutes);
+
+export default app;
