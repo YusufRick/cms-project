@@ -146,6 +146,7 @@ const ConsumerDashboard = () => {
       });
 
       const newComplaint = {
+        
         id: res.id,
         status: "pending",
         createdAt: new Date(),
@@ -303,13 +304,15 @@ const ConsumerDashboard = () => {
                     >
                       Title
                     </Label>
-                    <Input
+                    <Textarea
                       id="title"
                       placeholder="Short summary of your issue"
                       value={title}
                       onChange={(e) => setTitle(e.target.value)}
-                      className="bg-gray-50 border-gray-200 focus:bg-white"
+                      rows={2}
+                      className="bg-gray-50 border-gray-200 focus:bg-white text-gray-900"
                     />
+                  
                   </div>
 
                   {/* Categories */}

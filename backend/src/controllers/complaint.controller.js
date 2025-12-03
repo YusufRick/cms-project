@@ -8,10 +8,10 @@ import {
   deleteComplaint,
 } from "../models/complaint.models.js";
 
-// GET /api/complaints  (user-specific)
+// GET /api/complaints 
 export const fetchUserComplaints = async (req, res) => {
   try {
-    const orgType = req.user.organizationType;  // from auth middleware
+    const orgType = req.user.organizationType;  
     const userId = req.user.uid;
 
     const complaints = await getComplaints(orgType, userId);
@@ -22,7 +22,7 @@ export const fetchUserComplaints = async (req, res) => {
   }
 };
 
-// (optional) GET /api/complaints/all  – staff/admin view
+// (optional) GET /api/complaints/all for staff and admin
 export const fetchAllComplaints = async (req, res) => {
   try {
     const orgType = req.user.organizationType;
@@ -58,17 +58,18 @@ export const submitComplaint = async (req, res) => {
     const orgType = req.user.organizationType;
     const userId = req.user.uid;
 
-    const { category_id, description, attachment } = req.body;
+    const { title, category_id, description, attachment } = req.body;
 
-    if (!category_id || !description) {
-      return res
-        .status(400)
-        .json({ error: "category_id and description are required" });
+    if (!title || !category_id || !description) {
+      return res.status(400).json({
+        error: "title, category_id and description are required",
+      });
     }
 
     const id = await createComplaint(orgType, {
+      title: title.trim(),
       category_id,
-      description,
+      description: description.trim(),
       attachment: attachment || "",
       user_id: userId,
     });
@@ -85,7 +86,7 @@ export const updateComplaintController = async (req, res) => {
   try {
     const orgType = req.user.organizationType;
     const { id } = req.params;
-    const data = req.body; // e.g. { status: "in_progress" }
+    const data = req.body; 
 
     await updateComplaint(orgType, id, data);
     res.json({ message: "Complaint updated" });

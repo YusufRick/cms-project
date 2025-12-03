@@ -13,12 +13,12 @@ const complaintCollection = (orgType) => {
 
 export const getComplaints = async (orgType, userId) => {
   try {
-    // 1) Only filter in Firestore
+    // check against userID
     const snapshot = await complaintCollection(orgType)
       .where("user_id", "==", userId)
       .get();
 
-    // 2) Map to plain objects
+    // map to a plain object
     const complaints = snapshot.docs.map((doc) => ({
       id: doc.id,
       ...doc.data(),
@@ -79,7 +79,7 @@ export const createComplaint = async (orgType, data) => {
     const now = new Date();
 
     const docRef = await complaintCollection(orgType).add({
-      status: "open",
+      status: "pending",
       createdAt: now,
       updatedAt: now,
       ...data,
