@@ -7,10 +7,14 @@ import {
   submitComplaint,
   updateComplaintController,
   deleteComplaintController,
+  submitComplaintByAgent, 
 } from "../controllers/complaint.controller.js";
 import { authMiddleware } from "../middleware/authMiddleware.js"; // adjust path if needed
 
 const router = express.Router();
+
+// helpdesk agent: log complaint on behalf of consumer
+router.post("/agent", authMiddleware, submitComplaintByAgent);
 
 // user: list own complaints
 router.get("/",           authMiddleware, fetchUserComplaints);

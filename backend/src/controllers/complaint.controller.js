@@ -8,6 +8,8 @@ import {
   deleteComplaint,
 } from "../models/complaint.models.js";
 
+
+
 // GET /api/complaints 
 export const fetchUserComplaints = async (req, res) => {
   try {
@@ -52,7 +54,7 @@ export const fetchComplaintById = async (req, res) => {
   }
 };
 
-// POST /api/complaints
+// submit complaint
 export const submitComplaint = async (req, res) => {
   try {
     const orgType = req.user.organizationType;
@@ -77,6 +79,56 @@ export const submitComplaint = async (req, res) => {
     res.status(201).json({ id });
   } catch (err) {
     console.error("submitComplaint error:", err);
+    res.status(500).json({ error: err.message });
+  }
+};
+
+//submit complaint by agent
+
+// POST /api/complaints/agent
+export const submitComplaintByAgent = async (req, res) => {
+  try {
+    const orgType = req.user.organizationType;
+    const agentId = req.user.uid;
+
+
+    const { consumer_email, title, category_id, description, attachment } = req.body;
+
+    if (!title || !consumer_email || !category_id || !description) {
+      return res.status(400).json({
+        error: "title, consumer_email, category_id and description are required",
+      });
+    }
+
+    const email = String(consumer_email).trim().toLowerCase();
+    const safeTitle =
+      (typeof title === "string" && title.trim())
+        ? title.trim()
+        : `Phone complaint from ${email}`;
+
+    const safeDescription = String(description || "").trim();
+
+    const payload = {
+      title: safeTitle,
+      category_id,
+      description: safeDescription,
+      attachment: attachment || "",
+      consumer_email: email,
+      logged_by: agentId,
+    };
+
+    // link complaint to actual consumer uid (so consumer sees it)
+    try {
+      const userRecord = await auth.getUserByEmail(email);
+      payload.user_id = userRecord.uid;
+    } catch (e) {
+      // user not found — keep consumer_email only
+    }
+
+    const id = await createComplaint(orgType, payload);
+    res.status(201).json({ id });
+  } catch (err) {
+    console.error("submitComplaintByAgent error:", err);
     res.status(500).json({ error: err.message });
   }
 };

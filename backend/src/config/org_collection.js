@@ -1,4 +1,4 @@
-//role based for each organisation
+  
 export const ORG_COLLECTIONS = {
   Airline: {
     categories: "Airline_Category",

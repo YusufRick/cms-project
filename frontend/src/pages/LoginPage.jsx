@@ -38,7 +38,7 @@ const LoginPage = () => {
     else if (role === "pending") {
         toast.info("Your account is pending approval. Please contact your administrator.");
         await logout();
-        return; // prevent accidental navigation
+        return; 
 }
     
     else {
