@@ -110,7 +110,6 @@ const ConsumerDashboard = () => {
     };
 
     load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
   const totalComplaints = complaints.length;

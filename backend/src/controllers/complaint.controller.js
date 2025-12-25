@@ -8,12 +8,13 @@ import {
   deleteComplaint,
 } from "../models/complaint.models.js";
 
+// ✅ Needed for submitComplaintByAgent -> auth.getUserByEmail
+import { auth } from "../../firebaseAdmin.js";
 
-
-// GET /api/complaints 
+// GET /api/complaints  (consumer: own complaints)
 export const fetchUserComplaints = async (req, res) => {
   try {
-    const orgType = req.user.organizationType;  
+    const orgType = req.user.organizationType;
     const userId = req.user.uid;
 
     const complaints = await getComplaints(orgType, userId);
@@ -24,7 +25,7 @@ export const fetchUserComplaints = async (req, res) => {
   }
 };
 
-// (optional) GET /api/complaints/all for staff and admin
+// GET /api/complaints/all (staff/agent/admin: all complaints in org)
 export const fetchAllComplaints = async (req, res) => {
   try {
     const orgType = req.user.organizationType;
@@ -54,7 +55,7 @@ export const fetchComplaintById = async (req, res) => {
   }
 };
 
-// submit complaint
+// POST /api/complaints  (consumer submits for self)
 export const submitComplaint = async (req, res) => {
   try {
     const orgType = req.user.organizationType;
@@ -69,9 +70,9 @@ export const submitComplaint = async (req, res) => {
     }
 
     const id = await createComplaint(orgType, {
-      title: title.trim(),
+      title: String(title).trim(),
       category_id,
-      description: description.trim(),
+      description: String(description).trim(),
       attachment: attachment || "",
       user_id: userId,
     });
@@ -83,26 +84,25 @@ export const submitComplaint = async (req, res) => {
   }
 };
 
-//submit complaint by agent
-
-// POST /api/complaints/agent
+// POST /api/complaints/agent  (agent logs on behalf of consumer)
 export const submitComplaintByAgent = async (req, res) => {
   try {
     const orgType = req.user.organizationType;
     const agentId = req.user.uid;
 
-
     const { consumer_email, title, category_id, description, attachment } = req.body;
 
-    if (!title || !consumer_email || !category_id || !description) {
+    // ✅ title should NOT be required (you already have fallback title)
+    if (!consumer_email || !category_id || !description) {
       return res.status(400).json({
-        error: "title, consumer_email, category_id and description are required",
+        error: "consumer_email, category_id and description are required",
       });
     }
 
     const email = String(consumer_email).trim().toLowerCase();
+
     const safeTitle =
-      (typeof title === "string" && title.trim())
+      typeof title === "string" && title.trim()
         ? title.trim()
         : `Phone complaint from ${email}`;
 
@@ -138,9 +138,8 @@ export const updateComplaintController = async (req, res) => {
   try {
     const orgType = req.user.organizationType;
     const { id } = req.params;
-    const data = req.body; 
 
-    await updateComplaint(orgType, id, data);
+    await updateComplaint(orgType, id, req.body);
     res.json({ message: "Complaint updated" });
   } catch (err) {
     console.error("updateComplaintController error:", err);

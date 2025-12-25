@@ -1,3 +1,4 @@
+// src/pages/AgentDashboard.jsx
 import { useEffect, useMemo, useRef, useState } from "react";
 import { DashboardLayout } from "../components/DashboardLayout";
 import { Button } from "../components/ui/button";
@@ -31,11 +32,17 @@ import {
 } from "../components/ui/select";
 
 import { toast } from "sonner";
-import { Upload, FileText, CheckCircle, Clock, Search, PhoneCall } from "lucide-react";
+import {
+  Upload,
+  FileText,
+  CheckCircle,
+  Clock,
+  Search,
+  PhoneCall,
+} from "lucide-react";
 import { useAuth } from "../context/authContext";
 
-const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || "http://localhost:4000";
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:4000";
 
 const AgentDashboard = () => {
   const { user, getIdToken } = useAuth();
@@ -51,13 +58,16 @@ const AgentDashboard = () => {
   // modal fields (consumer pattern + consumerEmail)
   const [consumerEmail, setConsumerEmail] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("");
-  const [title, setTitle] = useState("");
+  const [title, setTitle] = useState(""); // optional (backend can fallback)
   const [description, setDescription] = useState("");
   const [attachment, setAttachment] = useState(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(null);
+
+  // ✅ separate submit state so "loading complaints" doesn't disable submit
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // SAME helper as ConsumerDashboard
   const withAuthFetch = async (path, options = {}) => {
@@ -184,15 +194,18 @@ const AgentDashboard = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!consumerEmail.trim() || !selectedCategory || !title.trim() || !description.trim()) {
-      toast.error("Please fill in customer email, title, category and description");
+    // title optional; require email/category/description
+    if (!consumerEmail.trim() || !selectedCategory || !description.trim()) {
+      toast.error("Please fill in customer email, category and description");
       return;
     }
 
     try {
+      setIsSubmitting(true);
+
       const payload = {
         consumer_email: consumerEmail.trim(),
-        title: title.trim(),
+        title: title.trim(), // optional, backend can fallback
         category_id: selectedCategory,
         description: description.trim(),
         attachment: null, // TODO upload later
@@ -222,6 +235,8 @@ const AgentDashboard = () => {
     } catch (err) {
       console.error(err);
       toast.error(`Failed to log complaint: ${err.message}`);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -234,7 +249,9 @@ const AgentDashboard = () => {
 
       setComplaints((prev) =>
         prev.map((c) =>
-          c.id === complaintId ? { ...c, status: newStatus, updatedAt: new Date() } : c
+          c.id === complaintId
+            ? { ...c, status: newStatus, updatedAt: new Date() }
+            : c
         )
       );
 
@@ -321,7 +338,10 @@ const AgentDashboard = () => {
 
         <Tabs defaultValue="manage" className="space-y-6">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-
+            <TabsList>
+              <TabsTrigger value="manage">Manage Complaints</TabsTrigger>
+              <TabsTrigger value="stats">Statistics</TabsTrigger>
+            </TabsList>
 
             {/* Log Complaint Button + Modal */}
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
@@ -370,7 +390,7 @@ const AgentDashboard = () => {
                     {/* Title */}
                     <div className="space-y-2">
                       <Label htmlFor="title" className="text-sm font-medium text-gray-800">
-                        Title
+                        Title <span className="text-gray-400 text-xs">(optional)</span>
                       </Label>
                       <Textarea
                         id="title"
@@ -461,20 +481,12 @@ const AgentDashboard = () => {
 
                     <DialogFooter className="pt-2 border-t border-gray-100 flex-shrink-0">
                       <Button
-                        type="button"
-                        variant="outline"
-                        className="rounded-full border-gray-300 text-gray-700"
-                        onClick={() => setIsDialogOpen(false)}
-                      >
-                        Cancel
-                      </Button>
-                      <Button
                         type="submit"
                         className="hover-lift rounded-full bg-blue-600 hover:bg-blue-700 text-white"
-                        disabled={loading}
+                        disabled={isSubmitting}
                       >
                         <Upload className="mr-2 h-4 w-4" />
-                        Log Complaint
+                        {isSubmitting ? "Logging..." : "Log Complaint"}
                       </Button>
                     </DialogFooter>
                   </form>
@@ -553,12 +565,14 @@ const AgentDashboard = () => {
                           <div className="text-sm text-gray-500">
                             {getCategoryName(complaint.category_id)}
                           </div>
+
                           {complaint.consumer_email && (
                             <div className="text-xs text-gray-400 mt-1">
                               Customer: {complaint.consumer_email}
                             </div>
                           )}
                         </div>
+
                         {getStatusBadge(complaint.status)}
                       </div>
 
@@ -571,15 +585,33 @@ const AgentDashboard = () => {
 
                         <Select
                           value={complaint.status}
-                          onValueChange={(value) => handleStatusChange(complaint.id, value)}
+                          onValueChange={(value) =>
+                            handleStatusChange(complaint.id, value)
+                          }
                         >
-                          <SelectTrigger className="w-[160px] bg-white">
+                          <SelectTrigger className="w-[160px] bg-white text-gray-900 border border-gray-300">
                             <SelectValue placeholder="Change status" />
                           </SelectTrigger>
-                          <SelectContent className="bg-background border border-border z-50">
-                            <SelectItem value="pending">Pending</SelectItem>
-                            <SelectItem value="in-progress">In Progress</SelectItem>
-                            <SelectItem value="resolved">Resolved</SelectItem>
+
+                          <SelectContent className="bg-white text-gray-900 border border-gray-200 shadow-lg z-50">
+                            <SelectItem
+                              value="pending"
+                              className="cursor-pointer focus:bg-gray-100 focus:text-gray-900"
+                            >
+                              Pending
+                            </SelectItem>
+                            <SelectItem
+                              value="in-progress"
+                              className="cursor-pointer focus:bg-gray-100 focus:text-gray-900"
+                            >
+                              In Progress
+                            </SelectItem>
+                            <SelectItem
+                              value="resolved"
+                              className="cursor-pointer focus:bg-gray-100 focus:text-gray-900"
+                            >
+                              Resolved
+                            </SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
