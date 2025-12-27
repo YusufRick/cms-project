@@ -1,5 +1,5 @@
 // src/pages/ConsumerDashboard.jsx
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { DashboardLayout } from "../components/DashboardLayout";
 import { Button } from "../components/ui/button";
 import {
@@ -23,11 +23,10 @@ import { Label } from "../components/ui/label";
 import { Textarea } from "../components/ui/textarea";
 import { Badge } from "../components/ui/badge";
 import { toast } from "sonner";
-import { Upload, FileText, CheckCircle, Clock } from "lucide-react";
+import { Upload, FileText, CheckCircle, Clock, Mail } from "lucide-react";
 import { useAuth } from "../context/authContext";
 
-const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || "http://localhost:4000";
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:4000";
 
 const ConsumerDashboard = () => {
   const { user, getIdToken } = useAuth();
@@ -39,9 +38,17 @@ const ConsumerDashboard = () => {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [attachment, setAttachment] = useState(null);
+
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(null);
+
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const consumerEmail = useMemo(
+    () => (user?.email ? String(user.email).trim().toLowerCase() : ""),
+    [user]
+  );
 
   const withAuthFetch = async (path, options = {}) => {
     const token = await getIdToken();
@@ -110,21 +117,21 @@ const ConsumerDashboard = () => {
     };
 
     load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
   const totalComplaints = complaints.length;
-  const resolvedComplaints = complaints.filter(
-    (c) => c.status === "resolved"
-  ).length;
-  const pendingComplaints = complaints.filter(
-    (c) => c.status === "pending"
-  ).length;
-  const inProgressComplaints = complaints.filter(
-    (c) => c.status === "in-progress"
-  ).length;
+  const resolvedComplaints = complaints.filter((c) => c.status === "resolved").length;
+  const pendingComplaints = complaints.filter((c) => c.status === "pending").length;
+  const inProgressComplaints = complaints.filter((c) => c.status === "in-progress").length;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    if (!consumerEmail) {
+      toast.error("Your account email is missing. Please re-login.");
+      return;
+    }
 
     if (!selectedCategory || !title.trim() || !description.trim()) {
       toast.error("Please fill in title, category and description");
@@ -132,11 +139,15 @@ const ConsumerDashboard = () => {
     }
 
     try {
+      setIsSubmitting(true);
+
+      // ✅ include consumer_email so backend can store it (normalized)
       const payload = {
         title: title.trim(),
         category_id: selectedCategory,
         description: description.trim(),
         attachment: null, // TODO: upload later
+        consumer_email: consumerEmail,
       };
 
       const res = await withAuthFetch("/api/complaints", {
@@ -145,7 +156,6 @@ const ConsumerDashboard = () => {
       });
 
       const newComplaint = {
-        
         id: res.id,
         status: "pending",
         createdAt: new Date(),
@@ -163,6 +173,8 @@ const ConsumerDashboard = () => {
     } catch (err) {
       console.error(err);
       toast.error(`Failed to submit complaint: ${err.message}`);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -198,7 +210,6 @@ const ConsumerDashboard = () => {
     );
   };
 
-  // UI
   return (
     <DashboardLayout title="Consumer Dashboard">
       <div className="bg-gray-50 min-h-screen p-6 md:p-8 space-y-6">
@@ -212,54 +223,42 @@ const ConsumerDashboard = () => {
               <FileText className="h-4 w-4 text-gray-400" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-gray-900">
-                {totalComplaints}
-              </div>
+              <div className="text-2xl font-bold text-gray-900">{totalComplaints}</div>
             </CardContent>
           </Card>
 
           <Card className="bg-white border border-gray-200 rounded-xl shadow-sm">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-gray-500">
-                Resolved
-              </CardTitle>
+              <CardTitle className="text-sm font-medium text-gray-500">Resolved</CardTitle>
               <CheckCircle className="h-4 w-4 text-emerald-500" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-emerald-600">
-                {resolvedComplaints}
-              </div>
+              <div className="text-2xl font-bold text-emerald-600">{resolvedComplaints}</div>
             </CardContent>
           </Card>
 
           <Card className="bg-white border border-gray-200 rounded-xl shadow-sm">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-gray-500">
-                Pending
-              </CardTitle>
+              <CardTitle className="text-sm font-medium text-gray-500">Pending</CardTitle>
               <Clock className="h-4 w-4 text-amber-500" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-amber-600">
-                {pendingComplaints}
-              </div>
+              <div className="text-2xl font-bold text-amber-600">{pendingComplaints}</div>
             </CardContent>
           </Card>
 
           <Card className="bg-white border border-gray-200 rounded-xl shadow-sm">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-gray-500">
-                In Progress
-              </CardTitle>
+              <CardTitle className="text-sm font-medium text-gray-500">In Progress</CardTitle>
               <FileText className="h-4 w-4 text-sky-500" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-sky-600">
-                {inProgressComplaints}
-              </div>
+              <div className="text-2xl font-bold text-sky-600">{inProgressComplaints}</div>
             </CardContent>
           </Card>
         </div>
+
+
 
         {/* Log Complaint Button + Modal */}
         <div className="flex justify-end">
@@ -271,7 +270,6 @@ const ConsumerDashboard = () => {
               </Button>
             </DialogTrigger>
 
-            {/* max-h with internal scroll so footer stays visible */}
             <DialogContent className="max-w-xl sm:max-w-2xl p-0 border-none bg-transparent">
               <div className="bg-white rounded-3xl shadow-2xl max-h-[80vh] flex flex-col overflow-hidden">
                 {/* Header */}
@@ -284,23 +282,27 @@ const ConsumerDashboard = () => {
                       Submit a Complaint
                     </DialogTitle>
                     <DialogDescription className="text-sm text-gray-500">
-                      Provide a title, choose a category and describe your
-                      issue.
+                      Provide a title, choose a category and describe your issue.
                     </DialogDescription>
                   </DialogHeader>
                 </div>
 
-                {/* Body (scrollable) */}
+                {/* Body */}
                 <form
                   onSubmit={handleSubmit}
                   className="flex-1 overflow-y-auto px-6 pb-4 pt-4 space-y-5"
                 >
+                  {/* ✅ Email preview (read-only) */}
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium text-gray-800">
+                      Your Email (auto)
+                    </Label>
+                    <Input value={consumerEmail} readOnly className="bg-gray-100 border-gray-200" />
+                  </div>
+
                   {/* Title */}
                   <div className="space-y-2">
-                    <Label
-                      htmlFor="title"
-                      className="text-sm font-medium text-gray-800"
-                    >
+                    <Label htmlFor="title" className="text-sm font-medium text-gray-800">
                       Title
                     </Label>
                     <Textarea
@@ -311,7 +313,6 @@ const ConsumerDashboard = () => {
                       rows={2}
                       className="bg-gray-50 border-gray-200 focus:bg-white text-gray-900"
                     />
-                  
                   </div>
 
                   {/* Categories */}
@@ -322,14 +323,11 @@ const ConsumerDashboard = () => {
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                       {categories.map((category) => {
                         const isSelected = selectedCategory === category.id;
-
                         return (
                           <button
                             key={category.id}
                             type="button"
-                            onClick={() =>
-                              setSelectedCategory(category.id)
-                            }
+                            onClick={() => setSelectedCategory(category.id)}
                             className={[
                               "group flex flex-col items-center justify-center gap-2 rounded-2xl border p-4 text-center transition-all hover-lift bg-white",
                               isSelected
@@ -357,10 +355,7 @@ const ConsumerDashboard = () => {
 
                   {/* Description */}
                   <div className="space-y-2">
-                    <Label
-                      htmlFor="description"
-                      className="text-sm font-medium text-gray-800"
-                    >
+                    <Label htmlFor="description" className="text-sm font-medium text-gray-800">
                       Description
                     </Label>
                     <Textarea
@@ -375,14 +370,8 @@ const ConsumerDashboard = () => {
 
                   {/* Attachment */}
                   <div className="space-y-2">
-                    <Label
-                      htmlFor="attachment"
-                      className="text-sm font-medium text-gray-800"
-                    >
-                      Attachment{" "}
-                      <span className="text-gray-400 text-xs">
-                        (optional)
-                      </span>
+                    <Label htmlFor="attachment" className="text-sm font-medium text-gray-800">
+                      Attachment <span className="text-gray-400 text-xs">(optional)</span>
                     </Label>
                     <label
                       htmlFor="attachment"
@@ -400,30 +389,28 @@ const ConsumerDashboard = () => {
                     <Input
                       id="attachment"
                       type="file"
-                      onChange={(e) =>
-                        setAttachment(e.target.files?.[0] || null)
-                      }
+                      onChange={(e) => setAttachment(e.target.files?.[0] || null)}
                       className="hidden"
                     />
                   </div>
 
-                  {/* Footer (non-scroll, but inside form so submit works) */}
                   <DialogFooter className="pt-2 border-t border-gray-100 flex-shrink-0">
                     <Button
                       type="button"
                       variant="outline"
-                      className="rounded-full border-gray-300 text-gray-700 hover:bg-blue-700 "
+                      className="rounded-full border-gray-300 text-gray-700"
                       onClick={() => setIsDialogOpen(false)}
+                      disabled={isSubmitting}
                     >
                       Cancel
                     </Button>
                     <Button
                       type="submit"
                       className="hover-lift rounded-full bg-blue-600 hover:bg-blue-700 text-white"
-                      disabled={loading}
+                      disabled={isSubmitting}
                     >
                       <Upload className="mr-2 h-4 w-4" />
-                      Submit Complaint
+                      {isSubmitting ? "Submitting..." : "Submit Complaint"}
                     </Button>
                   </DialogFooter>
                 </form>
@@ -443,13 +430,9 @@ const ConsumerDashboard = () => {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            {loading && (
-              <p className="text-sm text-gray-500">Loading complaints...</p>
-            )}
+            {loading && <p className="text-sm text-gray-500">Loading complaints...</p>}
             {!loading && loadError && (
-              <p className="text-sm text-red-500">
-                Failed to load complaints: {loadError}
-              </p>
+              <p className="text-sm text-red-500">Failed to load complaints: {loadError}</p>
             )}
             {!loading && !loadError && complaints.length === 0 && (
               <p className="text-sm text-gray-500">No complaints yet.</p>
@@ -466,30 +449,23 @@ const ConsumerDashboard = () => {
                       <div className="font-semibold text-lg text-gray-900">
                         {complaint.title || complaint.id}
                       </div>
-                      <div className="text-xs text-gray-400 mb-1">
-                        ID: {complaint.id}
-                      </div>
+                      <div className="text-xs text-gray-400 mb-1">ID: {complaint.id}</div>
                       <div className="text-sm text-gray-500">
                         {getCategoryName(complaint.category_id)}
                       </div>
                     </div>
                     {getStatusBadge(complaint.status)}
                   </div>
-                  <p className="text-sm text-gray-800 mb-2">
-                    {complaint.description}
-                  </p>
+
+                  <p className="text-sm text-gray-800 mb-2">{complaint.description}</p>
+
                   <div className="flex items-center justify-between text-xs text-gray-500">
                     <span>
-                      Submitted:{" "}
-                      {toDate(complaint.createdAt)?.toLocaleDateString() ||
-                        "-"}
+                      Submitted: {toDate(complaint.createdAt)?.toLocaleDateString() || "-"}
                     </span>
                     {complaint.resolvedAt && (
                       <span>
-                        Resolved:{" "}
-                        {toDate(
-                          complaint.resolvedAt
-                        )?.toLocaleDateString() || "-"}
+                        Resolved: {toDate(complaint.resolvedAt)?.toLocaleDateString() || "-"}
                       </span>
                     )}
                   </div>

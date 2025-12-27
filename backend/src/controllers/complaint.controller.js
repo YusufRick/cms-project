@@ -8,16 +8,20 @@ import {
   deleteComplaint,
 } from "../models/complaint.models.js";
 
-// ✅ Needed for submitComplaintByAgent -> auth.getUserByEmail
 import { auth } from "../../firebaseAdmin.js";
 
 // GET /api/complaints  (consumer: own complaints)
 export const fetchUserComplaints = async (req, res) => {
   try {
     const orgType = req.user.organizationType;
-    const userId = req.user.uid;
+    const email = String(req.user.email || "").trim().toLowerCase();
 
-    const complaints = await getComplaints(orgType, userId);
+    if (!email) {
+      return res.status(400).json({ error: "User email not found in token" });
+    }
+
+    // ✅ email-based lookup
+    const complaints = await getComplaints(orgType, email);
     res.json(complaints);
   } catch (err) {
     console.error("fetchUserComplaints error:", err);
@@ -59,7 +63,12 @@ export const fetchComplaintById = async (req, res) => {
 export const submitComplaint = async (req, res) => {
   try {
     const orgType = req.user.organizationType;
-    const userId = req.user.uid;
+    const createdBy = req.user.uid;
+
+    const email = String(req.user.email || "").trim().toLowerCase();
+    if (!email) {
+      return res.status(400).json({ error: "User email not found in token" });
+    }
 
     const { title, category_id, description, attachment } = req.body;
 
@@ -74,7 +83,13 @@ export const submitComplaint = async (req, res) => {
       category_id,
       description: String(description).trim(),
       attachment: attachment || "",
-      user_id: userId,
+
+      // ✅ normalized identity
+      consumer_email: email,
+
+      // ✅ audit fields (optional but recommended)
+      created_by: createdBy,
+      source: "self",
     });
 
     res.status(201).json({ id });
@@ -92,7 +107,6 @@ export const submitComplaintByAgent = async (req, res) => {
 
     const { consumer_email, title, category_id, description, attachment } = req.body;
 
-    // ✅ title should NOT be required (you already have fallback title)
     if (!consumer_email || !category_id || !description) {
       return res.status(400).json({
         error: "consumer_email, category_id and description are required",
@@ -113,11 +127,17 @@ export const submitComplaintByAgent = async (req, res) => {
       category_id,
       description: safeDescription,
       attachment: attachment || "",
+
+      // ✅ normalized identity
       consumer_email: email,
+
+      // ✅ audit
+      created_by: agentId,
+      source: "agent",
       logged_by: agentId,
     };
 
-    // link complaint to actual consumer uid (so consumer sees it)
+    // Optional: store uid if found (doesn't affect email-only queries)
     try {
       const userRecord = await auth.getUserByEmail(email);
       payload.user_id = userRecord.uid;
