@@ -66,7 +66,7 @@ const AgentDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(null);
 
-  // ✅ separate submit state so "loading complaints" doesn't disable submit
+
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // SAME helper as ConsumerDashboard
@@ -90,7 +90,7 @@ const AgentDashboard = () => {
     return res.json();
   };
 
-  // SAME helper as ConsumerDashboard
+
   const toDate = (value) => {
     if (!value) return null;
     if (typeof value.toDate === "function") return value.toDate();
@@ -98,11 +98,11 @@ const AgentDashboard = () => {
     return new Date(value);
   };
 
-  // SAME helper as ConsumerDashboard
+
   const getCategoryName = (categoryId) =>
     categories.find((c) => c.id === categoryId)?.name || "Unknown";
 
-  // load data (agent: all complaints)
+
   useEffect(() => {
     if (!user) {
       setLoading(false);
@@ -205,7 +205,7 @@ const AgentDashboard = () => {
 
       const payload = {
         consumer_email: consumerEmail.trim(),
-        title: title.trim(), // optional, backend can fallback
+        title: title.trim(),
         category_id: selectedCategory,
         description: description.trim(),
         attachment: null, // TODO upload later

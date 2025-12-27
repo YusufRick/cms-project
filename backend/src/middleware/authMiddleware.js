@@ -1,6 +1,6 @@
 // src/middleware/authMiddleware.js
 import { auth, db } from "../../firebaseAdmin.js";
-import { ORG_COLLECTIONS } from "../config/orgCollections.js";
+import { ORG_COLLECTIONS } from "../config/org_collection.js";
 
 // Optional helper: normalise org names to your mapping keys
 const normaliseOrgType = (org) => {

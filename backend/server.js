@@ -22,6 +22,8 @@ app.use(
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+app.get("/__debug", (req, res) => res.send("RIGHT SERVER FILE RUNNING"));
+
 app.get("/", (req, res) => {
   res.json({ status: "ok", message: "CMS backend is running" });
 });
