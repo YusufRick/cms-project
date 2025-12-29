@@ -64,7 +64,7 @@ export const authMiddleware = async (req, res, next) => {
       });
     }
 
-    // ✅ Enforce org must exist in ORG_COLLECTIONS
+    //RBAC 
     if (!ORG_COLLECTIONS[organizationType]) {
       return res.status(400).json({
         error: `Unsupported organisation type: ${organizationType}`,

@@ -23,10 +23,19 @@ import { Label } from "../components/ui/label";
 import { Textarea } from "../components/ui/textarea";
 import { Badge } from "../components/ui/badge";
 import { toast } from "sonner";
-import { Upload, FileText, CheckCircle, Clock, Mail } from "lucide-react";
+import {
+  Upload,
+  FileText,
+  CheckCircle,
+  Clock,
+  Mail,
+  Wrench,
+  UserPlus,
+} from "lucide-react";
 import { useAuth } from "../context/authContext";
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:4000";
+const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL || "http://localhost:4000";
 
 const ConsumerDashboard = () => {
   const { user, getIdToken } = useAuth();
@@ -141,12 +150,11 @@ const ConsumerDashboard = () => {
     try {
       setIsSubmitting(true);
 
-      // ✅ include consumer_email so backend can store it (normalized)
       const payload = {
         title: title.trim(),
         category_id: selectedCategory,
         description: description.trim(),
-        attachment: null, // TODO: upload later
+        attachment: null,
         consumer_email: consumerEmail,
       };
 
@@ -229,7 +237,9 @@ const ConsumerDashboard = () => {
 
           <Card className="bg-white border border-gray-200 rounded-xl shadow-sm">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-gray-500">Resolved</CardTitle>
+              <CardTitle className="text-sm font-medium text-gray-500">
+                Resolved
+              </CardTitle>
               <CheckCircle className="h-4 w-4 text-emerald-500" />
             </CardHeader>
             <CardContent>
@@ -239,7 +249,9 @@ const ConsumerDashboard = () => {
 
           <Card className="bg-white border border-gray-200 rounded-xl shadow-sm">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-gray-500">Pending</CardTitle>
+              <CardTitle className="text-sm font-medium text-gray-500">
+                Pending
+              </CardTitle>
               <Clock className="h-4 w-4 text-amber-500" />
             </CardHeader>
             <CardContent>
@@ -249,7 +261,9 @@ const ConsumerDashboard = () => {
 
           <Card className="bg-white border border-gray-200 rounded-xl shadow-sm">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-gray-500">In Progress</CardTitle>
+              <CardTitle className="text-sm font-medium text-gray-500">
+                In Progress
+              </CardTitle>
               <FileText className="h-4 w-4 text-sky-500" />
             </CardHeader>
             <CardContent>
@@ -257,8 +271,6 @@ const ConsumerDashboard = () => {
             </CardContent>
           </Card>
         </div>
-
-
 
         {/* Log Complaint Button + Modal */}
         <div className="flex justify-end">
@@ -292,12 +304,16 @@ const ConsumerDashboard = () => {
                   onSubmit={handleSubmit}
                   className="flex-1 overflow-y-auto px-6 pb-4 pt-4 space-y-5"
                 >
-                  {/* ✅ Email preview (read-only) */}
+                  {/* Email preview (read-only) */}
                   <div className="space-y-2">
                     <Label className="text-sm font-medium text-gray-800">
                       Your Email (auto)
                     </Label>
-                    <Input value={consumerEmail} readOnly className="bg-gray-100 border-gray-200" />
+                    <Input
+                      value={consumerEmail}
+                      readOnly
+                      className="bg-gray-100 border-gray-200"
+                    />
                   </div>
 
                   {/* Title */}
@@ -439,38 +455,116 @@ const ConsumerDashboard = () => {
             )}
 
             <div className="space-y-4">
-              {complaints.map((complaint) => (
-                <div
-                  key={complaint.id}
-                  className="p-4 bg-white border border-gray-200 rounded-2xl hover:border-blue-400 transition-all"
-                >
-                  <div className="flex items-start justify-between mb-2">
-                    <div>
-                      <div className="font-semibold text-lg text-gray-900">
-                        {complaint.title || complaint.id}
+              {complaints.map((complaint) => {
+                const solutionText = complaint?.solution?.text || complaint?.solution_text || "";
+                const solvedByName =
+                  complaint?.solution?.agent?.name ||
+                  complaint?.solution?.agent_name ||
+                  complaint?.resolved_by?.name ||
+                  "";
+
+                const solvedByEmail =
+                  complaint?.solution?.agent?.email ||
+                  complaint?.solution?.agent_email ||
+                  complaint?.resolved_by?.email ||
+                  "";
+
+                const supportEmailValue =
+                  complaint?.support?.email || complaint?.support_email || "";
+                const supportNameValue =
+                  complaint?.support?.name || complaint?.support_name || "";
+
+                return (
+                  <div
+                    key={complaint.id}
+                    className="p-4 bg-white border border-gray-200 rounded-2xl hover:border-blue-400 transition-all"
+                  >
+                    <div className="flex items-start justify-between mb-2">
+                      <div>
+                        <div className="font-semibold text-lg text-gray-900">
+                          {complaint.title || complaint.id}
+                        </div>
+                        <div className="text-xs text-gray-400 mb-1">ID: {complaint.id}</div>
+                        <div className="text-sm text-gray-500">
+                          {getCategoryName(complaint.category_id)}
+                        </div>
+
+                        {/* optional: show your own email */}
+                        {complaint.consumer_email && (
+                          <div className="mt-1 flex items-center gap-2 text-xs text-gray-400">
+                            <Mail className="h-3 w-3" />
+                            {complaint.consumer_email}
+                          </div>
+                        )}
                       </div>
-                      <div className="text-xs text-gray-400 mb-1">ID: {complaint.id}</div>
-                      <div className="text-sm text-gray-500">
-                        {getCategoryName(complaint.category_id)}
-                      </div>
+
+                      {getStatusBadge(complaint.status)}
                     </div>
-                    {getStatusBadge(complaint.status)}
-                  </div>
 
-                  <p className="text-sm text-gray-800 mb-2">{complaint.description}</p>
+                    <p className="text-sm text-gray-800 mb-2">{complaint.description}</p>
 
-                  <div className="flex items-center justify-between text-xs text-gray-500">
-                    <span>
-                      Submitted: {toDate(complaint.createdAt)?.toLocaleDateString() || "-"}
-                    </span>
-                    {complaint.resolvedAt && (
-                      <span>
-                        Resolved: {toDate(complaint.resolvedAt)?.toLocaleDateString() || "-"}
-                      </span>
+                    {/* ✅ Support assignment (if any) */}
+                    {(supportEmailValue || supportNameValue) && (
+                      <div className="mt-3 p-3 rounded-xl border bg-sky-50 border-sky-100">
+                        <div className="flex items-center gap-2 text-xs font-semibold text-sky-800">
+                          <UserPlus className="h-4 w-4" />
+                          Support Assigned
+                        </div>
+                        <div className="mt-1 text-sm text-sky-900">
+                          {supportNameValue ? (
+                            <span className="font-medium">{supportNameValue}</span>
+                          ) : null}
+                          {supportEmailValue ? (
+                            <span className={supportNameValue ? "ml-2 text-sky-700" : ""}>
+                              {supportEmailValue}
+                            </span>
+                          ) : null}
+                        </div>
+                      </div>
                     )}
+
+                    {/* ✅ Solution (if any) */}
+                    {solutionText && (
+                      <div className="mt-3 p-3 rounded-xl border bg-emerald-50 border-emerald-100">
+                        <div className="flex items-center gap-2 text-xs font-semibold text-emerald-800">
+                          <Wrench className="h-4 w-4" />
+                          Solution
+                        </div>
+
+                        <div className="mt-1 text-sm text-emerald-900">
+                          {solutionText}
+                        </div>
+
+                        {(solvedByName || solvedByEmail) && (
+                          <div className="mt-2 text-xs text-emerald-800">
+                            By{" "}
+                            <span className="font-semibold">
+                              {solvedByName || "Agent"}
+                            </span>
+                            {solvedByEmail ? (
+                              <span className="text-emerald-700">
+                                {" "}
+                                ({solvedByEmail})
+                              </span>
+                            ) : null}
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    <div className="mt-3 flex items-center justify-between text-xs text-gray-500">
+                      <span>
+                        Submitted: {toDate(complaint.createdAt)?.toLocaleDateString() || "-"}
+                      </span>
+                      {complaint.resolvedAt && (
+                        <span>
+                          Resolved: {toDate(complaint.resolvedAt)?.toLocaleDateString() || "-"}
+                        </span>
+                      )}
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </CardContent>
         </Card>
