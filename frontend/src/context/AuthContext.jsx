@@ -1,102 +1,144 @@
 // src/context/authContext.js
-import { createContext, useContext, useState, useEffect } from "react";
+import { createContext, useContext, useEffect, useState } from "react";
 import {
   onAuthStateChanged,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   signOut,
 } from "firebase/auth";
+import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
 
 import { auth, db } from "../firebase";
-import { serverTimestamp, setDoc, getDoc, doc } from "firebase/firestore";
 
 const AuthContext = createContext(undefined);
 
 export const useAuth = () => {
   const ctx = useContext(AuthContext);
-  if (!ctx) {
-    throw new Error("useAuth must be used within AuthProvider");
-  }
+  if (!ctx) throw new Error("useAuth must be used within AuthProvider");
   return ctx;
+};
+
+// Normalize roles so routes + UI never fight about role strings
+const normalizeRole = (raw) => {
+  const r = String(raw || "").toLowerCase().trim().replace(/\s+/g, "");
+
+  if (r === "admin") return "admin";
+  if (["consumer", "user", "customer"].includes(r)) return "consumer";
+  if (["helpdeskagent", "helpdesk", "agent", "support"].includes(r)) return "agent";
+  if (r === "pending") return "pending";
+
+  return "pending";
 };
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null); // { uid, email, name, role, company }
   const [loading, setLoading] = useState(true);
 
+  // 🔑 helper: get current user's ID token for backend auth
+  const getIdToken = async () => {
+    const current = auth.currentUser;
+    if (!current) throw new Error("User not logged in");
+    return current.getIdToken(false);
+  };
+
+  // Load profile from Firestore
+  const loadUserProfile = async (firebaseUser) => {
+    const userDocRef = doc(db, "User", firebaseUser.uid);
+    const userDoc = await getDoc(userDocRef);
+    const data = userDoc.data() || {};
+
+    const role = normalizeRole(data.Role || "pending");
+    const company = data.Company || "";
+
+    return {
+      uid: firebaseUser.uid,
+      email: firebaseUser.email,
+      name:
+        firebaseUser.displayName ||
+        firebaseUser.email?.split("@")[0] ||
+        "User",
+      role,
+      company,
+    };
+  };
+
+  // Keep user in sync with Firebase auth session
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
-      if (firebaseUser) {
-        (async () => {
-          try {
-            const userDocRef = doc(db, "User", firebaseUser.uid);
-            const userDoc = await getDoc(userDocRef);
-            const data = userDoc.data() || {};
-
-            const role = (data.Role || "pending").toLowerCase();
-            const company = data.Company || "";
-
-            setUser({
-              uid: firebaseUser.uid,
-              email: firebaseUser.email,
-              name:
-                firebaseUser.displayName ||
-                firebaseUser.email?.split("@")[0] ||
-                "User",
-              role,
-              company,
-            });
-          } catch (error) {
-            console.error("Error loading user profile:", error);
+      (async () => {
+        setLoading(true);
+        try {
+          if (!firebaseUser) {
             setUser(null);
-          } finally {
-            setLoading(false);
+            return;
           }
-        })();
-      } else {
-        setUser(null);
-        setLoading(false);
-      }
+
+          const profile = await loadUserProfile(firebaseUser);
+
+          // If pending users are not allowed to remain signed in:
+          if (profile.role === "pending") {
+            await signOut(auth);
+            setUser(null);
+            return;
+          }
+
+          setUser(profile);
+        } catch (error) {
+          console.error("Error loading user profile:", error);
+          setUser(null);
+        } finally {
+          setLoading(false);
+        }
+      })();
     });
 
     return () => unsubscribe();
   }, []);
 
-  // 🔑 helper: get current user's ID token for backend auth
-  const getIdToken = async () => {
-    const current = auth.currentUser;
-    if (!current) {
-      throw new Error("User not logged in");
-    }
-    return current.getIdToken(/* forceRefresh? false */);
-  };
-
-  // LOGIN + RBAC
+  // LOGIN (auth + profile fetch + status validation)
   const login = async (email, password) => {
-    const cred = await signInWithEmailAndPassword(auth, email, password);
+    try {
+      const cred = await signInWithEmailAndPassword(auth, email, password);
+      const profile = await loadUserProfile(cred.user);
 
-    const userDoc = await getDoc(doc(db, "User", cred.user.uid));
-    const data = userDoc.data() || {};
-    const role = data.Role || "pending";
-    const company = data.Company || "";
-    const getemail = data.email || "";
+      if (profile.role === "pending") {
+        await signOut(auth);
+        setUser(null);
+        const err = new Error("Account pending approval");
+        err.code = "ACCOUNT_PENDING";
+        throw err;
+      }
 
-    console.log("Fetched Role from Firestore:", role);
-    console.log("Fetched email from Firestore:", getemail);
+      setUser(profile);
+      return profile.role;
+    } catch (err) {
+      const c = err?.code;
 
-    setUser((prev) => ({
-      uid: cred.user.uid,
-      email: cred.user.email,
-      name:
-        prev?.name ||
-        cred.user.displayName ||
-        cred.user.email?.split("@")[0] ||
-        "User",
-      role: role.toLowerCase(),
-      company,
-    }));
+      // Firebase invalid credential codes vary by SDK/version
+      if (
+        c === "auth/invalid-credential" ||
+        c === "auth/invalid-login-credentials" ||
+        c === "auth/wrong-password" ||
+        c === "auth/user-not-found"
+      ) {
+        const e = new Error("Invalid email or password");
+        e.code = "INVALID_CREDENTIALS";
+        throw e;
+      }
 
-    return role;
+      if (c === "auth/invalid-email") {
+        const e = new Error("Invalid email format");
+        e.code = "INVALID_EMAIL";
+        throw e;
+      }
+
+      if (err?.code === "ACCOUNT_PENDING") throw err;
+
+      console.error("Login Error:", err);
+      const e = new Error("Login failed");
+      e.code = "LOGIN_FAILED";
+      throw e;
+    }
   };
 
   // SIGNUP
@@ -112,21 +154,29 @@ export const AuthProvider = ({ children }) => {
         createdAt: serverTimestamp(),
       });
 
-      return cred.user;
+      // Signup auto-logs in; if you block pending users, sign out immediately
+      await signOut(auth);
+      setUser(null);
+
+      return true;
     } catch (err) {
       console.error("Signup Error:", err);
 
-      let message = "Signup failed. Please try again.";
+      const e = new Error("Signup failed. Please try again.");
+      e.code = "SIGNUP_FAILED";
 
-      if (err.code === "auth/email-already-in-use") {
-        message = "This email is already registered.";
-      } else if (err.code === "auth/invalid-email") {
-        message = "Invalid email format.";
-      } else if (err.code === "auth/weak-password") {
-        message = "Password must be stronger.";
+      if (err?.code === "auth/email-already-in-use") {
+        e.code = "EMAIL_IN_USE";
+        e.message = "This email is already registered.";
+      } else if (err?.code === "auth/invalid-email") {
+        e.code = "INVALID_EMAIL";
+        e.message = "Invalid email format.";
+      } else if (err?.code === "auth/weak-password") {
+        e.code = "WEAK_PASSWORD";
+        e.message = "Password is too weak (min 6 characters).";
       }
 
-      throw new Error(message);
+      throw e;
     }
   };
 
@@ -140,14 +190,14 @@ export const AuthProvider = ({ children }) => {
     <AuthContext.Provider
       value={{
         user,
+        loading,
         login,
         signup,
         logout,
-        getIdToken,   // 👈 expose token function
-        loading,
+        getIdToken,
       }}
     >
-      {!loading && children}
+      {children}
     </AuthContext.Provider>
   );
 };

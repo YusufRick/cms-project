@@ -1,8 +1,17 @@
 import React from "react";
-import LoginPage from "./pages/LoginPage";
+import { BrowserRouter } from "react-router-dom";
+import { Toaster } from "sonner";
 
-function App() {
-  return <LoginPage />;
+import { AuthProvider } from "./context/authContext";
+import AppRoutes from "./AppRoutes";
+
+export default function App() {
+  return (
+    <BrowserRouter>
+      <AuthProvider>
+        <Toaster richColors position="top-right" />
+        <AppRoutes />
+      </AuthProvider>
+    </BrowserRouter>
+  );
 }
-
-export default App;

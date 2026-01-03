@@ -1,8 +1,7 @@
+// src/pages/Signup.jsx
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../context/authContext";
-import { db,} from "../firebase";
-import {serverTimestamp,addDoc,collection} from "firebase/firestore";
 
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
@@ -26,14 +25,12 @@ import {
 import { toast } from "sonner";
 import { UserPlus } from "lucide-react";
 
-
-
 const Signup = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [repassword, setRepassword] = useState("");
   const [name, setName] = useState("");
-  const [organization, setOrganization] = useState("bank");
+  const [organization, setOrganization] = useState("Bank"); // matches SelectItem values
   const [loading, setLoading] = useState(false);
 
   const { signup } = useAuth();
@@ -50,11 +47,21 @@ const Signup = () => {
     setLoading(true);
     try {
       await signup(email, password, name, organization);
-      toast.success("Account created successfully!");
-      navigate("/login");
+
+      toast.success("Account created successfully! Please sign in.");
+      navigate("/login", { replace: true });
     } catch (error) {
       console.error(error);
-      toast.error(error.message || "Signup failed. Please try again.");
+
+      if (error?.code === "EMAIL_IN_USE") {
+        toast.error("This email is already registered.");
+      } else if (error?.code === "INVALID_EMAIL") {
+        toast.error("Invalid email format.");
+      } else if (error?.code === "WEAK_PASSWORD") {
+        toast.error("Password is too weak (min 6 characters).");
+      } else {
+        toast.error(error?.message || "Signup failed. Please try again.");
+      }
     } finally {
       setLoading(false);
     }
@@ -184,10 +191,7 @@ const Signup = () => {
               <Label className="text-sm font-medium text-slate-700">
                 Organization
               </Label>
-              <Select
-                value={organization}
-                onValueChange={setOrganization}
-              >
+              <Select value={organization} onValueChange={setOrganization}>
                 <SelectTrigger
                   className="
                     h-11 rounded-xl border border-slate-200

@@ -37,7 +37,6 @@ import {
   FileText,
   CheckCircle,
   Clock,
-  Search,
   PhoneCall,
   Wrench,
   UserPlus,
@@ -54,7 +53,7 @@ const AgentDashboard = () => {
   const [complaints, setComplaints] = useState([]);
 
   // agent-specific
-  const [searchId, setSearchId] = useState("");
+
   const [highlightId, setHighlightId] = useState(null);
   const complaintRefs = useRef({});
 
@@ -269,31 +268,7 @@ const AgentDashboard = () => {
     }
   };
 
-  const handleSearch = () => {
-    const q = searchId.trim();
-    if (!q) {
-      toast.error("Please enter a complaint ID");
-      return;
-    }
 
-    const found = sortedComplaints.find(
-      (c) => String(c.id).toLowerCase() === q.toLowerCase()
-    );
-
-    if (!found) {
-      toast.error("Complaint not found");
-      return;
-    }
-
-    toast.success(`Found complaint: ${found.id}`);
-    setHighlightId(found.id);
-
-    setTimeout(() => {
-      const el = complaintRefs.current[found.id];
-      if (el?.scrollIntoView) el.scrollIntoView({ behavior: "smooth", block: "center" });
-      setTimeout(() => setHighlightId(null), 1600);
-    }, 50);
-  };
 
   // ✅ open manage modal when clicking a complaint
   const openManageComplaint = (complaint) => {
@@ -605,34 +580,6 @@ const AgentDashboard = () => {
 
         <Tabs defaultValue="manage" className="space-y-6">
           <TabsContent value="manage" className="space-y-6">
-            {/* Search */}
-            <Card className="bg-white border border-gray-200 rounded-2xl shadow-sm">
-              <CardHeader>
-                <CardTitle className="text-sm font-semibold text-gray-900">
-                  Search Complaint
-                </CardTitle>
-                <CardDescription className="text-gray-500">
-                  Search by complaint ID (exact)
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="flex flex-col md:flex-row gap-2">
-                  <Input
-                    placeholder="Enter Complaint ID"
-                    value={searchId}
-                    onChange={(e) => setSearchId(e.target.value)}
-                    onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-                  />
-                  <Button
-                    onClick={handleSearch}
-                    className="hover-lift bg-blue-600 hover:bg-blue-700 text-white"
-                  >
-                    <Search className="mr-2 h-4 w-4" />
-                    Search
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
 
             {/* List */}
             <Card className="bg-white border border-gray-200 rounded-2xl shadow-sm">
