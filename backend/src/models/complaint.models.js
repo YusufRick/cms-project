@@ -1,7 +1,9 @@
-// src/models/complaint.models.js
+
 import { db } from "../../firebaseAdmin.js";
 import { ORG_COLLECTIONS } from "../config/org_collection.js";
 
+
+// complaint based on organisation type
 const complaintCollection = (orgType) => {
   const orgConfig = ORG_COLLECTIONS[orgType];
   if (!orgConfig || !orgConfig.complaints) {
@@ -18,10 +20,10 @@ const toMillisSafe = (v) => {
   return Number.isFinite(t) ? t : 0;
 };
 
-/**
- * Consumer: get own complaints by consumer_email
- * (Your controller passes email)
- */
+// CRUD operations for complaint
+
+
+// Fetch complaints by consumer email
 export const getComplaints = async (orgType, consumerEmail) => {
   try {
     const email = String(consumerEmail || "").trim().toLowerCase();
@@ -44,6 +46,8 @@ export const getComplaints = async (orgType, consumerEmail) => {
   }
 };
 
+
+//Fetch all complaints for staff within organisation
 export const getAllComplaints = async (orgType) => {
   try {
     const snapshot = await complaintCollection(orgType)
@@ -60,6 +64,8 @@ export const getAllComplaints = async (orgType) => {
   }
 };
 
+
+// Get complaint by complaint_id
 export const getComplaintById = async (orgType, id) => {
   try {
     const docSnap = await complaintCollection(orgType).doc(id).get();
@@ -70,6 +76,9 @@ export const getComplaintById = async (orgType, id) => {
     throw err;
   }
 };
+
+
+// create new complaint
 
 export const createComplaint = async (orgType, data) => {
   try {
@@ -89,6 +98,9 @@ export const createComplaint = async (orgType, data) => {
   }
 };
 
+
+// Update an existing complaint
+
 export const updateComplaint = async (orgType, id, data) => {
   try {
     await complaintCollection(orgType).doc(id).update({
@@ -100,6 +112,9 @@ export const updateComplaint = async (orgType, id, data) => {
     throw err;
   }
 };
+
+
+//delete a complaint
 
 export const deleteComplaint = async (orgType, id) => {
   try {

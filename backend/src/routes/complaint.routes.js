@@ -1,4 +1,4 @@
-// src/routes/complaint.routes.js
+
 import express from "express";
 import {
   fetchUserComplaints,
@@ -18,19 +18,19 @@ const router = express.Router();
 router.patch("/:id/solution", authMiddleware, addSolutionController);
 router.patch("/:id/assign", authMiddleware, assignSupportController);
 
-// helpdesk agent: log complaint on behalf of consumer
+// helpdesk agent logs a complaint on behalf of consumer
 router.post("/agent", authMiddleware, submitComplaintByAgent);
 
-// user: list own complaints
+// Consumer retreieves own complaints
 router.get("/", authMiddleware, fetchUserComplaints);
 
-// staff/admin: list all complaints
+// agent retrieves all complaints within organisation
 router.get("/all", authMiddleware, fetchAllComplaints);
 
-// get single complaint
+// agent get a single complaint using a search engine (optional)
 router.get("/:id", authMiddleware, fetchComplaintById);
 
-// create complaint
+// creating a complaint
 router.post("/", authMiddleware, submitComplaint);
 
 // update complaint

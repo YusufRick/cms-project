@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../context/authContext";
@@ -13,15 +12,15 @@ import {
   CardHeader,
   CardTitle,
 } from "../components/ui/card";
-import { Toaster, toast } from "sonner";
 import { Shield } from "lucide-react";
-
-
 
 const LoginPage = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
+
+  // ✅ simple error state
+  const [error, setError] = useState("");
 
   const { login } = useAuth();
   const navigate = useNavigate();
@@ -29,21 +28,29 @@ const LoginPage = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSubmitting(true);
+    setError(""); // reset previous error
 
     try {
       await login(email, password);
-
-      toast.success("Login successful!");
       navigate("/", { replace: true });
-    } catch (error) {
-      console.error(error);
+    } catch (err) {
+      console.error(err);
 
-      if (error?.code === "INVALID_CREDENTIALS") {
-        toast.error("Invalid email or password.");
-      } else if (error?.code === "ACCOUNT_PENDING") {
-        toast.info("Your account is pending approval. Please contact your administrator.");
-      } else {
-        toast.error("Login failed. Please try again.");
+      // map authContext error codes → user-friendly message
+      switch (err?.code) {
+        case "INVALID_CREDENTIALS":
+          setError("Invalid email or password.");
+          break;
+        case "INVALID_EMAIL":
+          setError("Invalid email format.");
+          break;
+        case "ACCOUNT_PENDING":
+          setError(
+            "Your account is pending approval. Please contact your administrator."
+          );
+          break;
+        default:
+          setError("Login failed. Please try again.");
       }
     } finally {
       setSubmitting(false);
@@ -63,7 +70,6 @@ const LoginPage = () => {
           hover:scale-[1.02] hover:shadow-[0_28px_90px_rgba(15,23,42,0.14)]
         "
       >
-        
         <CardHeader className="text-center pb-2">
           <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-[#e5ecff]">
             <Shield className="h-8 w-8 text-[#2563eb]" />
@@ -76,8 +82,15 @@ const LoginPage = () => {
           <CardDescription className="mt-1 text-[15px] text-slate-500">
             Sign in to your account to continue
           </CardDescription>
+
+          {/* ✅ inline error message */}
+          {error && (
+            <div className="mt-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+              {error}
+            </div>
+          )}
         </CardHeader>
-      
+
         <form onSubmit={handleSubmit}>
           <CardContent className="mt-4 space-y-4">
             <div className="space-y-1.5 text-left">
@@ -100,7 +113,10 @@ const LoginPage = () => {
             </div>
 
             <div className="space-y-1.5 text-left">
-              <Label htmlFor="password" className="text-sm font-medium text-slate-700">
+              <Label
+                htmlFor="password"
+                className="text-sm font-medium text-slate-700"
+              >
                 Password
               </Label>
               <Input
@@ -136,15 +152,16 @@ const LoginPage = () => {
 
             <p className="text-center text-sm text-slate-500">
               Don&apos;t have an account?{" "}
-              <Link to="/register" className="font-medium text-[#2563eb] hover:underline">
+              <Link
+                to="/register"
+                className="font-medium text-[#2563eb] hover:underline"
+              >
                 Sign up
               </Link>
             </p>
-            
           </CardFooter>
         </form>
       </Card>
-      
     </div>
   );
 };

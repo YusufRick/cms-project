@@ -1,16 +1,16 @@
-// src/middleware/authMiddleware.js
+
 import { auth, db } from "../../firebaseAdmin.js";
 import { ORG_COLLECTIONS } from "../config/org_collection.js";
 
-// Optional helper: normalise org names to your mapping keys
+//normalise by trimming and case-insensitive matching
 const normaliseOrgType = (org) => {
   if (!org) return org;
   const trimmed = String(org).trim();
 
-  // If it already matches exactly, keep it
+  // check organisation exists
   if (ORG_COLLECTIONS[trimmed]) return trimmed;
 
-  // Try case-insensitive match
+  // try case-insensitive match
   const foundKey = Object.keys(ORG_COLLECTIONS).find(
     (k) => k.toLowerCase() === trimmed.toLowerCase()
   );
@@ -20,7 +20,6 @@ const normaliseOrgType = (org) => {
 
 export const authMiddleware = async (req, res, next) => {
   try {
-    // Let preflight through
     if (req.method === "OPTIONS") return next();
 
     const header = req.headers.authorization;
@@ -32,10 +31,10 @@ export const authMiddleware = async (req, res, next) => {
 
     const idToken = header.split(" ")[1];
 
-    // Decode Firebase ID token
+    // Firebase JWT token verification
     const decoded = await auth.verifyIdToken(idToken);
 
-    // 1) Try claims / header (least reliable)
+ 
     let organizationType =
       decoded.organizationType ||
       decoded.orgType ||
@@ -43,7 +42,6 @@ export const authMiddleware = async (req, res, next) => {
 
     organizationType = normaliseOrgType(organizationType);
 
-    // 2) Firestore user doc (best source)
     let role = decoded.role || decoded.userRole || null;
 
     const userDoc = await db.collection("User").doc(decoded.uid).get();
@@ -64,7 +62,7 @@ export const authMiddleware = async (req, res, next) => {
       });
     }
 
-    //RBAC 
+    //Role based control system
     if (!ORG_COLLECTIONS[organizationType]) {
       return res.status(400).json({
         error: `Unsupported organisation type: ${organizationType}`,
@@ -75,7 +73,7 @@ export const authMiddleware = async (req, res, next) => {
       uid: decoded.uid,
       email: decoded.email,
       organizationType,
-      role, // ✅ useful for RBAC checks later
+      role, 
     };
 
     next();

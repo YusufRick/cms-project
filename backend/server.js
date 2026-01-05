@@ -31,7 +31,7 @@ app.get("/", (req, res) => {
 app.use("/api/categories", categoryRoutes);
 app.use("/api/complaints", complaintRoutes);
 
-const PORT = process.env.PORT || 4000; // 👈 CHANGED HERE
+const PORT = process.env.PORT || 4000; 
 
 app.listen(PORT, () => {
   console.log(`Backend listening on http://localhost:${PORT}`);

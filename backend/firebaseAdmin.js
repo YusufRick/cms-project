@@ -1,4 +1,4 @@
-// backend/firebaseAdmin.js
+
 import admin from "firebase-admin";
 import { createRequire } from "module";
 

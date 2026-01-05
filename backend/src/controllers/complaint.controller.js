@@ -1,4 +1,4 @@
-// src/controllers/complaint.controller.js
+
 import {
   getComplaints,
   getAllComplaints,
@@ -11,8 +11,7 @@ import {
 import { auth, db } from "../../firebaseAdmin.js";
 
 /**
- * GET /api/complaints
- * Consumer: list own complaints (email-based)
+ Retrieve complaints submitted by email
  */
 export const fetchUserComplaints = async (req, res) => {
   try {
@@ -32,8 +31,7 @@ export const fetchUserComplaints = async (req, res) => {
 };
 
 /**
- * GET /api/complaints/all
- * Staff/Agent/Admin: list all complaints in org
+Retrieve all complaints within their organisation only
  */
 export const fetchAllComplaints = async (req, res) => {
   try {
@@ -47,7 +45,7 @@ export const fetchAllComplaints = async (req, res) => {
 };
 
 /**
- * GET /api/complaints/:id
+ Retrieve a complaint by Id
  */
 export const fetchComplaintById = async (req, res) => {
   try {
@@ -65,8 +63,7 @@ export const fetchComplaintById = async (req, res) => {
 };
 
 /**
- * POST /api/complaints
- * Consumer submits for self
+ Consumer submits a complaint
  */
 export const submitComplaint = async (req, res) => {
   try {
@@ -89,14 +86,9 @@ export const submitComplaint = async (req, res) => {
       category_id,
       description: String(description).trim(),
       attachment: attachment || "",
-
-      // ✅ normalized identity
       consumer_email: email,
-
-      // ✅ audit
       created_by: createdBy,
       source: "self",
-
       status: "pending",
       createdAt: new Date(),
       updatedAt: new Date(),
@@ -110,8 +102,7 @@ export const submitComplaint = async (req, res) => {
 };
 
 /**
- * POST /api/complaints/agent
- * Agent logs on behalf of consumer
+ * Agent logs a complaint on behalf of customer through phone call
  */
 export const submitComplaintByAgent = async (req, res) => {
   try {
@@ -140,11 +131,7 @@ export const submitComplaintByAgent = async (req, res) => {
       category_id,
       description: safeDescription,
       attachment: attachment || "",
-
-      // ✅ normalized identity
       consumer_email: email,
-
-      // ✅ audit
       created_by: agentId,
       source: "agent",
       logged_by: agentId,
@@ -154,12 +141,12 @@ export const submitComplaintByAgent = async (req, res) => {
       updatedAt: new Date(),
     };
 
-    // Optional: store uid if found (useful later, not required)
+    // store user id fi email exists in Firebase Auth
     try {
       const userRecord = await auth.getUserByEmail(email);
       payload.user_id = userRecord.uid;
     } catch (_) {
-      // user not found — keep consumer_email only
+
     }
 
     const id = await createComplaint(orgType, payload);
@@ -171,8 +158,7 @@ export const submitComplaintByAgent = async (req, res) => {
 };
 
 /**
- * PATCH /api/complaints/:id
- * Generic update (status etc.)
+ * Updating a complaint
  */
 export const updateComplaintController = async (req, res) => {
   try {
@@ -188,7 +174,7 @@ export const updateComplaintController = async (req, res) => {
 };
 
 /**
- * DELETE /api/complaints/:id
+ * delete complaint
  */
 export const deleteComplaintController = async (req, res) => {
   try {
@@ -204,8 +190,8 @@ export const deleteComplaintController = async (req, res) => {
 };
 
 /**
- * PATCH /api/complaints/:id/assign
- * Assign a support person by email
+ *Assigning a support engineer to a complaint
+ Only one support engineer can be assigned to a single complaint.
  */
 export const assignSupportController = async (req, res) => {
   try {
@@ -224,8 +210,7 @@ export const assignSupportController = async (req, res) => {
     const record = await auth.getUserByEmail(email);
     const supportUid = record.uid;
 
-    // optional display name from Firestore
-    let supportName = "";
+
     try {
       const supportDoc = await db.collection("User").doc(supportUid).get();
       if (supportDoc.exists) {
@@ -258,10 +243,8 @@ export const assignSupportController = async (req, res) => {
 };
 
 /**
- * PATCH /api/complaints/:id/solution
- * Add solution + agent identity so consumer dashboard can display it
- *
- * Body: { solution_text: string, markResolved?: boolean }
+ * add a solution to the complaint and display the helpdesk agent responsible for it.
+
  */
 export const addSolutionController = async (req, res) => {
   try {
@@ -270,7 +253,7 @@ export const addSolutionController = async (req, res) => {
     const agentEmail = String(req.user.email || "").trim().toLowerCase();
     const { id } = req.params;
 
-    const { solution_text, markResolved } = req.body;
+    const { solution_text, markResolved, status } = req.body;
 
     if (!solution_text || !String(solution_text).trim()) {
       return res.status(400).json({ error: "solution_text is required" });
@@ -282,9 +265,17 @@ export const addSolutionController = async (req, res) => {
       const agentDoc = await db.collection("User").doc(agentUid).get();
       if (agentDoc.exists) {
         const data = agentDoc.data();
-        agentName = data?.Name || data?.FullName || data?.displayName || "";
+        agentName =
+          data?.Name ||
+          data?.FullName ||
+          data?.displayName ||
+          "";
       }
     } catch (_) {}
+
+    // deciding the status of a complaitn after adding solution
+    const finalStatus =
+      status || (markResolved ? "resolved" : "in-progress");
 
     const payload = {
       solution: {
@@ -294,15 +285,21 @@ export const addSolutionController = async (req, res) => {
         agent_name: agentName || agentEmail || "Agent",
         createdAt: new Date(),
       },
-      status: markResolved ? "resolved" : "in-progress",
+      status: finalStatus,
       updatedAt: new Date(),
-      ...(markResolved ? { resolvedAt: new Date() } : {}),
+      ...(finalStatus === "resolved" ? { resolvedAt: new Date() } : {}),
     };
 
     await updateComplaint(orgType, id, payload);
-    return res.json({ message: "Solution saved", complaintId: id });
+
+    return res.json({
+      message: "Solution saved",
+      complaintId: id,
+      status: finalStatus,
+    });
   } catch (err) {
     console.error("addSolutionController error:", err);
     return res.status(500).json({ error: err.message });
   }
 };
+

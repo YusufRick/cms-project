@@ -23,8 +23,8 @@ const normalizeRole = (raw) => {
   const r = String(raw || "").toLowerCase().trim().replace(/\s+/g, "");
 
   if (r === "admin") return "admin";
-  if (["consumer", "user", "customer"].includes(r)) return "consumer";
-  if (["helpdeskagent", "helpdesk", "agent", "support"].includes(r)) return "agent";
+  if (["consumer"].includes(r)) return "consumer";
+  if (["helpdeskagent"].includes(r)) return "agent";
   if (r === "pending") return "pending";
 
   return "pending";

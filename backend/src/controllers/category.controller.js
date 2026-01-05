@@ -1,12 +1,10 @@
-// src/controllers/category.controller.js
+
 import {
   getCategories,
-  createCategory,
-  updateCategory,
-  deleteCategory,
+  
 } from "../models/category.models.js";
 
-// GET /api/categories
+// GET categories from firestore
 export const listCategories = async (req, res) => {
   try {
     const orgType = req.user.organizationType;
@@ -41,31 +39,7 @@ export const addCategory = async (req, res) => {
   }
 };
 
-// PATCH /api/categories/:id
-export const editCategory = async (req, res) => {
-  try {
-    const orgType = req.user.organizationType;
-    const { id } = req.params;
-    const data = req.body;
 
-    await updateCategory(orgType, id, data);
-    res.json({ message: "Category updated" });
-  } catch (err) {
-    console.error("editCategory error:", err);
-    res.status(500).json({ error: err.message });
-  }
-};
 
-// DELETE /api/categories/:id
-export const removeCategory = async (req, res) => {
-  try {
-    const orgType = req.user.organizationType;
-    const { id } = req.params;
 
-    await deleteCategory(orgType, id);
-    res.json({ message: "Category deleted" });
-  } catch (err) {
-    console.error("removeCategory error:", err);
-    res.status(500).json({ error: err.message });
-  }
-};
+

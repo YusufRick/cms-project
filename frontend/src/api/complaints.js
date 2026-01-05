@@ -23,7 +23,7 @@ async function request(path, { token, method = "GET", body } = {}) {
   return res.json();
 }
 
-// Consumer
+// 
 export function getMyComplaints(token) {
   return request("/api/complaints", { token });
 }

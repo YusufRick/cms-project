@@ -53,7 +53,6 @@ const AgentDashboard = () => {
   const [complaints, setComplaints] = useState([]);
 
   // agent-specific
-
   const [highlightId, setHighlightId] = useState(null);
   const complaintRefs = useRef({});
 
@@ -146,7 +145,6 @@ const AgentDashboard = () => {
     };
 
     load();
-    
   }, [user]);
 
   // stats
@@ -268,9 +266,7 @@ const AgentDashboard = () => {
     }
   };
 
-
-
-  // ✅ open manage modal when clicking a complaint
+  // open manage modal
   const openManageComplaint = (complaint) => {
     setActiveComplaint(complaint);
     setSolutionText(complaint?.solution?.text || "");
@@ -278,7 +274,7 @@ const AgentDashboard = () => {
     setIsManageDialogOpen(true);
   };
 
-  // ✅ save solution
+
   const handleSaveSolution = async () => {
     if (!activeComplaint?.id) return;
     if (!solutionText.trim()) {
@@ -291,36 +287,44 @@ const AgentDashboard = () => {
 
       const payload = {
         solution_text: solutionText.trim(),
-        // helpful display info for consumer dashboard
+        status: "resolved",
+
         agent: {
           uid: user?.uid || "",
           email: (user?.email || "").toLowerCase(),
-          name: user?.displayName || user?.email || "Agent",
+          name: user?.name || user?.email || "Agent",
         },
       };
 
-      await withAuthFetch(`/api/complaints/${activeComplaint.id}/solution`, {
-        method: "PATCH",
-        body: JSON.stringify(payload),
-      });
+      // If your backend returns the updated complaint, we'll use it.
+      const updated = await withAuthFetch(
+        `/api/complaints/${activeComplaint.id}/solution`,
+        {
+          method: "PATCH",
+          body: JSON.stringify(payload),
+        }
+      );
 
-      // optimistic update
       setComplaints((prev) =>
-        prev.map((c) =>
-          c.id === activeComplaint.id
-            ? {
-                ...c,
-                solution: {
-                  text: payload.solution_text,
-                  agent: payload.agent,
-                  addedAt: new Date(),
-                },
-                status: "resolved", // optional: auto resolve when solution added
-                resolvedAt: new Date(),
-                updatedAt: new Date(),
-              }
-            : c
-        )
+        prev.map((c) => {
+          if (c.id !== activeComplaint.id) return c;
+
+          // If backend returned a status, trust it; otherwise keep your intended "resolved"
+          const nextStatus = updated?.status || "resolved";
+          const nextResolvedAt = updated?.resolvedAt || new Date();
+
+          return {
+            ...c,
+            solution: {
+              text: payload.solution_text,
+              agent: payload.agent,
+              addedAt: new Date(),
+            },
+            status: nextStatus,
+            resolvedAt: nextStatus === "resolved" ? nextResolvedAt : c.resolvedAt,
+            updatedAt: new Date(),
+          };
+        })
       );
 
       toast.success("Solution added");
@@ -334,7 +338,7 @@ const AgentDashboard = () => {
     }
   };
 
-  // ✅ assign support
+  // assign support
   const handleAssignSupport = async () => {
     if (!activeComplaint?.id) return;
     if (!supportEmail.trim()) {
@@ -347,28 +351,33 @@ const AgentDashboard = () => {
 
       const payload = { support_email: supportEmail.trim() };
 
-      await withAuthFetch(`/api/complaints/${activeComplaint.id}/assign`, {
+      const updated = await withAuthFetch(`/api/complaints/${activeComplaint.id}/assign`, {
         method: "PATCH",
         body: JSON.stringify(payload),
       });
 
-      // optimistic update
       setComplaints((prev) =>
-        prev.map((c) =>
-          c.id === activeComplaint.id
-            ? {
-                ...c,
-                support: {
-                  ...(c.support || {}),
-                  email: payload.support_email.toLowerCase(),
-                  assignedAt: new Date(),
-                  assignedBy_uid: user?.uid || "",
-                },
-                status: "in-progress",
-                updatedAt: new Date(),
-              }
-            : c
-        )
+        prev.map((c) => {
+          if (c.id !== activeComplaint.id) return c;
+
+          // ✅ DO NOT downgrade resolved -> in-progress in UI
+          const nextStatus =
+            c.status === "resolved"
+              ? "resolved"
+              : (updated?.status || "in-progress");
+
+          return {
+            ...c,
+            support: {
+              ...(c.support || {}),
+              email: payload.support_email.toLowerCase(),
+              assignedAt: new Date(),
+              assignedBy_uid: user?.uid || "",
+            },
+            status: nextStatus,
+            updatedAt: new Date(),
+          };
+        })
       );
 
       toast.success("Support assigned");
@@ -580,7 +589,6 @@ const AgentDashboard = () => {
 
         <Tabs defaultValue="manage" className="space-y-6">
           <TabsContent value="manage" className="space-y-6">
-
             {/* List */}
             <Card className="bg-white border border-gray-200 rounded-2xl shadow-sm">
               <CardHeader>
@@ -637,7 +645,6 @@ const AgentDashboard = () => {
 
                       <p className="text-sm text-gray-800 mb-3">{complaint.description}</p>
 
-                      {/* quick preview if solution/support already exists */}
                       <div className="flex flex-col gap-1 text-xs text-gray-500">
                         {complaint.solution?.text && (
                           <div className="flex items-center gap-2">
@@ -662,7 +669,6 @@ const AgentDashboard = () => {
                           Submitted: {toDate(complaint.createdAt)?.toLocaleDateString() || "-"}
                         </span>
 
-                        {/* keep your status dropdown */}
                         <div onClick={(e) => e.stopPropagation()}>
                           <Select
                             value={complaint.status}
@@ -723,7 +729,6 @@ const AgentDashboard = () => {
               </DialogDescription>
             </DialogHeader>
 
-            {/* Add solution */}
             <div className="space-y-2">
               <Label className="text-sm font-medium text-gray-800">Solution</Label>
               <Textarea
@@ -738,7 +743,6 @@ const AgentDashboard = () => {
               </div>
             </div>
 
-            {/* Assign support */}
             <div className="space-y-2 mt-4">
               <Label className="text-sm font-medium text-gray-800">
                 Assign Support Person (email)
